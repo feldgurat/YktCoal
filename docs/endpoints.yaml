@@ -1,53 +1,105 @@
 openapi: 3.0.3
 info:
-  title: Пример API
+  title: API
   version: 1.0.0
 
 servers:
-  - url: https://api.example.com
+  - url: https://api.yktCoal.ru
+
+# По умолчанию все эндпоинты требуют JWT, кроме тех, где security: []
+security:
+  - bearerAuth: []
 
 paths:
-  /Persons:
-    get:
-      summary: Список пользователей
-      description: Возвращает список пользователей с пагинацией.
-      parameters:
-        - in: query
-          name: limit
-          description: Сколько записей вернуть
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 200
-            default: 50
-        - in: query
-          name: offset
-          description: Сколько записей пропустить
-          schema:
-            type: integer
-            minimum: 0
-            default: 0
+  # ===================== AUTH =====================
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Логин (получить JWT)
+      description: Возвращает accessToken (JWT) и (опционально) refreshToken.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
       responses:
         "200":
           description: Успешно
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  items:
-                    description: Список пользователей
-                    type: array
-                    items:
-                      $ref: "#/components/schemas/Person"
-                  total:
-                    description: Общее количество пользователей
-                    type: integer
-                required: [items, total]
+                $ref: "#/components/schemas/AuthTokens"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
+  /auth/refresh:
     post:
-      summary: Создать пользователя
-      description: Создаёт нового пользователя.
+      tags: [Auth]
+      summary: Обновить токены
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokens"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/logout:
+    post:
+      tags: [Auth]
+      summary: Выход (инвалидация refresh-токена)
+      description: Обычно используется для “разлогина” (если вы храните refresh-токены на сервере).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "204":
+          description: Успешно
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ===================== admins =====================
+  /admins:
+    get:
+      tags: [Person]
+      summary: Список админов
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Person]
+      summary: Создать админа
       requestBody:
         required: true
         content:
@@ -61,19 +113,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Person"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
-  /Persons/{id}:
-    parameters:
-      - in: path
-        name: id
-        description: ID пользователя
-        required: true
-        schema:
-          type: string
-          format: uuid
-
+  /admins/{id}:
     get:
-      summary: Получить пользователя по ID
+      tags: [Person]
+      summary: Получить админа по ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
       responses:
         "200":
           description: Успешно
@@ -81,12 +133,17 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Person"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
         "404":
-          description: Пользователь не найден
-
+          $ref: "#/components/responses/NotFound"
     patch:
-      summary: Обновить пользователя (частично)
-      description: Частично обновляет поля пользователя.
+      tags: [Person]
+      summary: Частично обновить админа
+      parameters:
+        - $ref: "#/components/parameters/Id"
       requestBody:
         required: true
         content:
@@ -100,15 +157,983 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Person"
-
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
     delete:
-      summary: Удалить пользователя
+      tags: [Person]
+      summary: Удалить админа
+      parameters:
+        - $ref: "#/components/parameters/Id"
       responses:
         "204":
-          description: Успешно удалено (без тела ответа)
+          description: Успешно
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ===================== CLIENTS =====================
+  /clients:
+    get:
+      tags: [Client]
+      summary: Список клиентов
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Client]
+      summary: Создать клиента
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientCreate"
+      responses:
+        "201":
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /clients/{id}:
+    get:
+      tags: [Client]
+      summary: Получить клиента по ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Client]
+      summary: Частично обновить клиента
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ClientPatch"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Client"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Client]
+      summary: Удалить клиента
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Успешно
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ===================== DRIVERS =====================
+  /drivers:
+    get:
+      tags: [Driver]
+      summary: Список водителей
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DriverListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Driver]
+      summary: Создать водителя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriverCreate"
+      responses:
+        "201":
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /drivers/{id}:
+    get:
+      tags: [Driver]
+      summary: Получить водителя по ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Driver]
+      summary: Частично обновить водителя
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DriverPatch"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Driver"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Driver]
+      summary: Удалить водителя
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Успешно
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ===================== ORDERS =====================
+  /orders:
+    get:
+      tags: [Order]
+      summary: Список заявок на доставку
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Order]
+      summary: Создать заявку на доставку
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderCreate"
+      responses:
+        "201":
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /orders/{id}:
+    get:
+      tags: [Order]
+      summary: Получить заявку по ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Order]
+      summary: Частично обновить заявку
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderPatch"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Order]
+      summary: Удалить заявку
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Успешно
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ===================== TRUCKS =====================
+  /trucks:
+    get:
+      tags: [Truck]
+      summary: Список грузовиков
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TruckListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Truck]
+      summary: Создать грузовик
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TruckCreate"
+      responses:
+        "201":
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Truck"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /trucks/{id}:
+    get:
+      tags: [Truck]
+      summary: Получить грузовик по ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Truck"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Truck]
+      summary: Частично обновить грузовик
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TruckPatch"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Truck"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Truck]
+      summary: Удалить грузовик
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Успешно
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ===================== OFFERS =====================
+  /offers:
+    get:
+      tags: [Offer]
+      summary: Список встречных предложений
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OfferListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Offer]
+      summary: Создать встречное предложение
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OfferCreate"
+      responses:
+        "201":
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Offer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /offers/{id}:
+    get:
+      tags: [Offer]
+      summary: Получить встречное предложение по ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Offer"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Offer]
+      summary: Частично обновить встречное предложение
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OfferPatch"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Offer"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Offer]
+      summary: Удалить встречное предложение
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Успешно
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ===================== RESOURCES =====================
+  /resources:
+    get:
+      tags: [Resource]
+      summary: Список ресурсов
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResourceListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Resource]
+      summary: Создать ресурс
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourceCreate"
+      responses:
+        "201":
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /resources/{id}:
+    get:
+      tags: [Resource]
+      summary: Получить ресурс по ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Resource]
+      summary: Частично обновить ресурс
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResourcePatch"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Resource"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Resource]
+      summary: Удалить ресурс
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Успешно
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ===================== APPLICATIONS =====================
+  /applications:
+    get:
+      tags: [Application]
+      summary: Список заявок на статус водителя
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [Application]
+      summary: Создать заявку на статус водителя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationCreate"
+      responses:
+        "201":
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /applications/{id}:
+    get:
+      tags: [Application]
+      summary: Получить заявку по ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [Application]
+      summary: Частично обновить заявку
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationPatch"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [Application]
+      summary: Удалить заявку
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Успешно
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ===================== TRUCK MODELS =====================
+  /truck-models:
+    get:
+      tags: [TruckModel]
+      summary: Список моделей грузовиков
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TruckModelListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      tags: [TruckModel]
+      summary: Создать модель грузовика
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TruckModelCreate"
+      responses:
+        "201":
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TruckModel"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /truck-models/{id}:
+    get:
+      tags: [TruckModel]
+      summary: Получить модель грузовика по ID
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TruckModel"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      tags: [TruckModel]
+      summary: Частично обновить модель грузовика
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TruckModelPatch"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TruckModel"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags: [TruckModel]
+      summary: Удалить модель грузовика
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Успешно
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id:
+      in: path
+      name: id
+      required: true
+      description: ID (uuid)
+      schema:
+        type: string
+        format: uuid
+
+    Limit:
+      in: query
+      name: limit
+      description: Сколько записей вернуть
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+
+    Offset:
+      in: query
+      name: offset
+      description: Сколько записей пропустить
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+  responses:
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Unauthorized:
+      description: Не авторизован (нет/неверный JWT)
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    Forbidden:
+      description: Нет прав доступа
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    NotFound:
+      description: Не найдено
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
   schemas:
+    FilePath:
+      type: string
+      description: Относительный путь к файлу на сервере (начинается с "/")
+      pattern: "^/.*"
+      example: /uploads/docs/passport-123.jpg
+
+    PhoneNumber:
+      type: string
+      description: Контактный телефон (рекомендуется E.164)
+      example: "+880053535"
+      pattern: "^\\+?[1-9]\\d{1,14}$"
+
+    ErrorResponse:
+      type: object
+      description: Ошибка API
+      properties:
+        message:
+          type: string
+          description: Описание ошибки
+        code:
+          type: string
+          description: Машинный код ошибки
+        details:
+          type: object
+          nullable: true
+          description: "Доп. детали (например, ошибки валидации)"
+          additionalProperties: true
+      required: [message]
+
+    LoginRequest:
+      type: object
+      description: Данные для входа (email + password)
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          description: Пароль
+      required: [email, password]
+
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          description: Refresh-токен
+      required: [refreshToken]
+
+    AuthTokens:
+      type: object
+      description: Пара токенов авторизации
+      properties:
+        tokenType:
+          type: string
+          example: Bearer
+        accessToken:
+          type: string
+          description: JWT access token
+        expiresIn:
+          type: integer
+          description: Срок жизни accessToken в секундах
+          example: 3600
+        refreshToken:
+          type: string
+          nullable: true
+          description: Refresh token (может отсутствовать/быть null, если не используете)
+      required: [tokenType, accessToken, expiresIn]
+
     Person:
       type: object
       description: Админ
@@ -117,17 +1142,16 @@ components:
           type: string
           format: uuid
           description: Идентификатор
+          readOnly: true
         name:
           type: string
           description: Имя пользователя
-        birthDay:
+        birthDate:
           type: string
-          format: date-time
+          format: date
           description: Дата рождения
         contactNumber:
-          type: string
-          format: phone
-          description: Контактный телефон
+          $ref: "#/components/schemas/PhoneNumber"
         email:
           type: string
           format: email
@@ -137,9 +1161,62 @@ components:
           description: Имя пользователя телеграм
         password:
           type: string
-          description: Пароль
+          format: password
+          description: Пароль (только для записи)
+          writeOnly: true
+      required: [id, name, contactNumber, email]
 
-      required: [id, name, contactNumber, email, password]
+    PersonCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        birthDate:
+          type: string
+          format: date
+        contactNumber:
+          $ref: "#/components/schemas/PhoneNumber"
+        email:
+          type: string
+          format: email
+        userName:
+          type: string
+        password:
+          type: string
+          format: password
+          writeOnly: true
+      required: [name, contactNumber, email, password]
+
+    PersonPatch:
+      type: object
+      properties:
+        name:
+          type: string
+        birthDate:
+          type: string
+          format: date-
+        contactNumber:
+          $ref: "#/components/schemas/PhoneNumber"
+        email:
+          type: string
+          format: email
+        userName:
+          type: string
+        password:
+          type: string
+          format: password
+          writeOnly: true
+
+    PersonListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Person"
+        total:
+          type: integer
+      required: [items, total]
 
     Client:
       type: object
@@ -149,17 +1226,16 @@ components:
           type: string
           format: uuid
           description: Идентификатор
+          readOnly: true
         name:
           type: string
           description: Имя пользователя
-        birthDay:
+        birthDate:
           type: string
           format: date-time
           description: Дата рождения
         contactNumber:
-          type: string
-          format: phone
-          description: Контактный телефон
+          $ref: "#/components/schemas/PhoneNumber"
         email:
           type: string
           format: email
@@ -169,12 +1245,69 @@ components:
           description: Имя пользователя телеграм
         password:
           type: string
-          description: Пароль
-        addres:
+          format: password
+          writeOnly: true
+          description: Пароль (только для записи)
+        address:
           type: string
           description: Адрес
+      required: [id, name, birthDate, contactNumber, email, userName, address]
 
-      required: [id, name,birthDay,  contactNumber, email,userName, password, addres]
+    ClientCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        birthDate:
+          type: string
+          format: date-time
+        contactNumber:
+          $ref: "#/components/schemas/PhoneNumber"
+        email:
+          type: string
+          format: email
+        userName:
+          type: string
+        password:
+          type: string
+          format: password
+          writeOnly: true
+        address:
+          type: string
+      required: [name, birthDate, contactNumber, email, userName, password, address]
+
+    ClientPatch:
+      type: object
+      properties:
+        name:
+          type: string
+        birthDate:
+          type: string
+          format: date-time
+        contactNumber:
+          $ref: "#/components/schemas/PhoneNumber"
+        email:
+          type: string
+          format: email
+        userName:
+          type: string
+        password:
+          type: string
+          format: password
+          writeOnly: true
+        address:
+          type: string
+
+    ClientListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Client"
+        total:
+          type: integer
+      required: [items, total]
 
     Driver:
       type: object
@@ -184,17 +1317,16 @@ components:
           type: string
           format: uuid
           description: Идентификатор
+          readOnly: true
         name:
           type: string
           description: Имя пользователя
-        birthDay:
+        birthDate:
           type: string
           format: date-time
           description: Дата рождения
         contactNumber:
-          type: string
-          format: phone
-          description: Контактный телефон
+          $ref: "#/components/schemas/PhoneNumber"
         email:
           type: string
           format: email
@@ -204,15 +1336,481 @@ components:
           description: Имя пользователя телеграм
         password:
           type: string
-          description: Пароль
-        truck:
-          type: object
-          description: Грузовик
+          format: password
+          writeOnly: true
+          description: Пароль (только для записи)
+      required: [id, name, birthDate, contactNumber, email, userName]
 
-      required: [id, name,birthDay, contactNumber, email,userName, password, truck]
+    DriverCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        birthDate:
+          type: string
+          format: date-time
+        contactNumber:
+          $ref: "#/components/schemas/PhoneNumber"
+        email:
+          type: string
+          format: email
+        userName:
+          type: string
+        password:
+          type: string
+          format: password
+          writeOnly: true
+      required: [name, birthDate, contactNumber, email, userName, password]
+
+    DriverPatch:
+      type: object
+      properties:
+        name:
+          type: string
+        birthDate:
+          type: string
+          format: date-time
+        contactNumber:
+          $ref: "#/components/schemas/PhoneNumber"
+        email:
+          type: string
+          format: email
+        userName:
+          type: string
+        password:
+          type: string
+          format: password
+          writeOnly: true
+
+    DriverListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Driver"
+        total:
+          type: integer
+      required: [items, total]
 
     Order:
       type: object
       description: Заявка на доставку
-      
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор
+          readOnly: true
+        destAddress:
+          type: string
+          description: Адрес доставки
+        volume:
+          type: number
+          description: Масса в тоннах
+        cost:
+          type: number
+          description: Итоговая цена
+        deliveryDate:
+          type: string
+          format: date-time
+          description: Дата доставки
+        orderDate:
+          type: string
+          format: date-time
+          description: Дата заказа
+        status:
+          type: string
+          description: Статус заказа
+        comment:
+          type: string
+          description: Комментарий
+        resourceId:
+          type: string
+          format: uuid
+          description: Идентификатор ресурса
+      required: [id, destAddress, volume, cost, deliveryDate, orderDate, status, comment, resourceId]
 
+    OrderCreate:
+      type: object
+      properties:
+        destAddress:
+          type: string
+        volume:
+          type: number
+        cost:
+          type: number
+        deliveryDate:
+          type: string
+          format: date-time
+        orderDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+        comment:
+          type: string
+        resourceId:
+          type: string
+          format: uuid
+      required: [destAddress, volume, cost, deliveryDate, orderDate, status, comment, resourceId]
+
+    OrderPatch:
+      type: object
+      properties:
+        destAddress:
+          type: string
+        volume:
+          type: number
+        cost:
+          type: number
+        deliveryDate:
+          type: string
+          format: date-time
+        orderDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+        comment:
+          type: string
+        resourceId:
+          type: string
+          format: uuid
+
+    OrderListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Order"
+        total:
+          type: integer
+      required: [items, total]
+
+    Truck:
+      type: object
+      description: Грузовик
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор
+          readOnly: true
+        driverId:
+          type: string
+          format: uuid
+          description: Идентификатор водителя
+        modelId:
+          type: string
+          format: uuid
+          description: Идентификатор модели
+        loadCapacity:
+          type: number
+          description: Грузоподъёмность в тоннах
+      required: [id, driverId, modelId]
+
+    TruckCreate:
+      type: object
+      properties:
+        driverId:
+          type: string
+          format: uuid
+        modelId:
+          type: string
+          format: uuid
+        loadCapacity:
+          type: number
+      required: [driverId, modelId]
+
+    TruckPatch:
+      type: object
+      properties:
+        driverId:
+          type: string
+          format: uuid
+        modelId:
+          type: string
+          format: uuid
+        loadCapacity:
+          type: number
+
+    TruckListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Truck"
+        total:
+          type: integer
+      required: [items, total]
+
+    Offer:
+      type: object
+      description: Встречное предложение по заявке
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор
+          readOnly: true
+        driverId:
+          type: string
+          format: uuid
+          description: Идентификатор водителя
+        orderId:
+          type: string
+          format: uuid
+          description: Идентификатор заявки
+        comment:
+          type: string
+          description: Комментарий
+        volume:
+          type: number
+          description: Масса в тоннах
+        deliveryDate:
+          type: string
+          format: date-time
+          description: Дата доставки
+        cost:
+          type: number
+          description: Итоговая цена
+      required: [id, driverId, orderId]
+
+    OfferCreate:
+      type: object
+      properties:
+        driverId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        comment:
+          type: string
+        volume:
+          type: number
+        deliveryDate:
+          type: string
+          format: date-time
+        cost:
+          type: number
+      required: [driverId, orderId]
+
+    OfferPatch:
+      type: object
+      properties:
+        driverId:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        comment:
+          type: string
+        volume:
+          type: number
+        deliveryDate:
+          type: string
+          format: date-time
+        cost:
+          type: number
+
+    OfferListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Offer"
+        total:
+          type: integer
+      required: [items, total]
+
+    Resource:
+      type: object
+      description: Ресурс
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор
+          readOnly: true
+        name:
+          type: string
+          description: Название
+        price:
+          type: number
+          description: Цена
+      required: [id, name]
+
+    ResourceCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+      required: [name]
+
+    ResourcePatch:
+      type: object
+      properties:
+        name:
+          type: string
+        price:
+          type: number
+
+    ResourceListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Resource"
+        total:
+          type: integer
+      required: [items, total]
+
+    Application:
+      type: object
+      description: Заявка на присвоение статуса водителя
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор
+          readOnly: true
+        date:
+          type: string
+          format: date-time
+          description: Дата подачи
+        driverLicense:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/FilePath"
+          nullable: true
+          description: Путь к фото ВУ или null
+        passport:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/FilePath"
+          nullable: true
+          description: Путь к фото паспорта или null
+        truckDocs:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/FilePath"
+          nullable: true
+          description: Путь к фото документов на машину или null
+      required: [id, date, driverLicense, passport, truckDocs]
+
+    ApplicationCreate:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date-time
+        driverLicense:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/FilePath"
+          nullable: true
+        passport:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/FilePath"
+          nullable: true
+        truckDocs:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/FilePath"
+          nullable: true
+      required: [date, driverLicense, passport, truckDocs]
+
+    ApplicationPatch:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date-time
+        driverLicense:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/FilePath"
+          nullable: true
+        passport:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/FilePath"
+          nullable: true
+        truckDocs:
+          type: string
+          allOf:
+            - $ref: "#/components/schemas/FilePath"
+          nullable: true
+
+    ApplicationListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Application"
+        total:
+          type: integer
+      required: [items, total]
+
+    TruckModel:
+      type: object
+      description: Модель грузовика
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор
+          readOnly: true
+        brand:
+          type: string
+          description: Название бренда
+        model:
+          type: string
+          description: Модель
+        truckLoad:
+          type: string
+          description: Базовая максимальная нагрузка
+      required: [id, brand, model, truckLoad]
+
+    TruckModelCreate:
+      type: object
+      properties:
+        brand:
+          type: string
+        model:
+          type: string
+        truckLoad:
+          type: string
+      required: [brand, model, truckLoad]
+
+    TruckModelPatch:
+      type: object
+      properties:
+        brand:
+          type: string
+        model:
+          type: string
+        truckLoad:
+          type: string
+
+    TruckModelListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TruckModel"
+        total:
+          type: integer
+      required: [items, total]
