@@ -1,0 +1,218 @@
+openapi: 3.0.3
+info:
+  title: Пример API
+  version: 1.0.0
+
+servers:
+  - url: https://api.example.com
+
+paths:
+  /Persons:
+    get:
+      summary: Список пользователей
+      description: Возвращает список пользователей с пагинацией.
+      parameters:
+        - in: query
+          name: limit
+          description: Сколько записей вернуть
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+        - in: query
+          name: offset
+          description: Сколько записей пропустить
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    description: Список пользователей
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Person"
+                  total:
+                    description: Общее количество пользователей
+                    type: integer
+                required: [items, total]
+
+    post:
+      summary: Создать пользователя
+      description: Создаёт нового пользователя.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonCreate"
+      responses:
+        "201":
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Person"
+
+  /Persons/{id}:
+    parameters:
+      - in: path
+        name: id
+        description: ID пользователя
+        required: true
+        schema:
+          type: string
+          format: uuid
+
+    get:
+      summary: Получить пользователя по ID
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Person"
+        "404":
+          description: Пользователь не найден
+
+    patch:
+      summary: Обновить пользователя (частично)
+      description: Частично обновляет поля пользователя.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonPatch"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Person"
+
+    delete:
+      summary: Удалить пользователя
+      responses:
+        "204":
+          description: Успешно удалено (без тела ответа)
+
+components:
+  schemas:
+    Person:
+      type: object
+      description: Админ
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор
+        name:
+          type: string
+          description: Имя пользователя
+        birthDay:
+          type: string
+          format: date-time
+          description: Дата рождения
+        contactNumber:
+          type: string
+          format: phone
+          description: Контактный телефон
+        email:
+          type: string
+          format: email
+          description: Электронная почта
+        userName:
+          type: string
+          description: Имя пользователя телеграм
+        password:
+          type: string
+          description: Пароль
+
+      required: [id, name, contactNumber, email, password]
+
+    Client:
+      type: object
+      description: Клиент
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор
+        name:
+          type: string
+          description: Имя пользователя
+        birthDay:
+          type: string
+          format: date-time
+          description: Дата рождения
+        contactNumber:
+          type: string
+          format: phone
+          description: Контактный телефон
+        email:
+          type: string
+          format: email
+          description: Электронная почта
+        userName:
+          type: string
+          description: Имя пользователя телеграм
+        password:
+          type: string
+          description: Пароль
+        addres:
+          type: string
+          description: Адрес
+
+      required: [id, name,birthDay,  contactNumber, email,userName, password, addres]
+
+    Driver:
+      type: object
+      description: Водитель
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Идентификатор
+        name:
+          type: string
+          description: Имя пользователя
+        birthDay:
+          type: string
+          format: date-time
+          description: Дата рождения
+        contactNumber:
+          type: string
+          format: phone
+          description: Контактный телефон
+        email:
+          type: string
+          format: email
+          description: Электронная почта
+        userName:
+          type: string
+          description: Имя пользователя телеграм
+        password:
+          type: string
+          description: Пароль
+        truck:
+          type: object
+          description: Грузовик
+
+      required: [id, name,birthDay, contactNumber, email,userName, password, truck]
+
+    Order:
+      type: object
+      description: Заявка на доставку
+      
+
