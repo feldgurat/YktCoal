@@ -4,7 +4,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://api.yktCoal.ru
+  - url: https://yktCoal.ru/api/v1/
 
 # По умолчанию все эндпоинты требуют JWT, кроме тех, где security: []
 security:
@@ -12,6 +12,48 @@ security:
 
 paths:
   # ===================== AUTH =====================
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      security: []      
+      summary: Зарегестрироваться
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokens"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/validate:
+    post:
+      tags: [Auth]
+      summary: Подтвверждение почны/номера
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        "200":
+          description: Успешно
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /auth/login:
     post:
       tags: [Auth]
@@ -77,6 +119,69 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  # ===================== ME =====================
+
+
+  /me/getProfile:
+    get:
+      tags: [Me]
+      summary: Получить свой профиль
+      responses:
+          "200":
+            description: Успешно
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Profile"
+          "401":
+            $ref: "#/components/responses/Unauthorized"
+          "403":
+            $ref: "#/components/responses/Forbidden"
+
+  /me/editProfile:
+    patch:
+      tags: [Me]
+      summary: Изменить свой профиль
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProfilePatch"
+      responses:
+          "200":
+            description: Успешно
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/Profile"
+          "401":
+            $ref: "#/components/responses/Unauthorized"
+          "403":
+            $ref: "#/components/responses/Forbidden"
+
+  /me/getOrders:
+    get:
+      tags: [Me]
+      summary: Получить мои заказы
+      parameters:
+        - $ref: "#/components/parameters/UserType"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+          "200":
+            description: Успешно
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/OrderListResponse"
+          "401":
+            $ref: "#/components/responses/Unauthorized"
+          "403":
+            $ref: "#/components/responses/Forbidden"
+
+
 
   # ===================== admins =====================
   /admins:
@@ -173,6 +278,24 @@ paths:
       responses:
         "204":
           description: Успешно
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /adm/ban/{id}:
+    patch:
+      tags: [Person]
+      summary: Забанить пользователя
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Успешно
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -384,6 +507,39 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ===================== REPORTS =====================
+
+  /reports/earnings:
+    get:
+      tags: [Report]
+      summary: Получить отчёт о доходах
+      parameters:
+        - $ref: "#/components/parameters/FromDate"
+        - $ref: "#/components/parameters/ToDate"
+      responses:
+        "200":
+          description: Отчёт о доходах
+          headers:
+            Content-Disposition:
+              description: attachment; filename="earnings_2025-11-01_2025-11-30.pdf"
+              schema:
+                type: string
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "422":
+          $ref: "#/components/responses/InvalidDate"
+
+      
+
   # ===================== ORDERS =====================
   /orders:
     get:
@@ -421,6 +577,46 @@ paths:
                 $ref: "#/components/schemas/Order"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /orders/{clientId}:
+    get:
+      tags: [Order]
+      summary: Получить заказы клиента
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderListResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+  /orders/{driverId}:
+    get:
+      tags: [Order]
+      summary: Получить заказы водителя
+      parameters:
+        - $ref: "#/components/parameters/Id"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Offset"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderListResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -798,6 +994,7 @@ paths:
       tags: [Application]
       summary: Список заявок на статус водителя
       parameters:
+        - $ref: "#/components/parameters/Self"
         - $ref: "#/components/parameters/Limit"
         - $ref: "#/components/parameters/Offset"
       responses:
@@ -833,6 +1030,46 @@ paths:
           $ref: "#/components/responses/Unauthorized"
         "403":
           $ref: "#/components/responses/Forbidden"
+        "406":
+          $ref: "#/components/responses/Conflict"
+      
+    delete:
+      tags: [Application]
+      summary: Удалить свою заявку
+      responses:
+        "200":
+          description: Удалено
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+
+    patch:
+      tags: [Application]
+      summary: Частично обновить свою заявку
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApplicationPatch"
+      responses:
+        "200":
+          description: Успешно
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /applications/{id}:
     get:
@@ -855,7 +1092,7 @@ paths:
           $ref: "#/components/responses/NotFound"
     patch:
       tags: [Application]
-      summary: Частично обновить заявку
+      summary: Обновить статус заявки
       parameters:
         - $ref: "#/components/parameters/Id"
       requestBody:
@@ -863,7 +1100,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ApplicationPatch"
+              $ref: "#/components/schemas/ApplicationEditStatus"
       responses:
         "200":
           description: Успешно
@@ -1013,6 +1250,25 @@ components:
         type: string
         format: uuid
 
+    FromDate:
+      in: query
+      name: from
+      required: true
+      description: Начало временного отрезка (DD-MM-YYYY)
+      schema:
+        type: string
+        format: date
+
+    ToDate:
+      in: query
+      name: to
+      required: true
+      description: Конец временного отрезка (DD-MM-YYYY)
+      schema:
+        type: string
+        format: date
+    
+
     Limit:
       in: query
       name: limit
@@ -1023,6 +1279,14 @@ components:
         maximum: 200
         default: 50
 
+    Self:
+      in: query
+      name: self
+      description: Только для себя или нет
+      schema:
+        type: boolean
+        default: true
+
     Offset:
       in: query
       name: offset
@@ -1032,9 +1296,23 @@ components:
         minimum: 0
         default: 0
 
+    UserType:
+      in: query
+      name: UserType
+      description: Тип пользователя (клиент/водитель)
+      schema:
+        type: string
+
   responses:
     BadRequest:
       description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+    InvalidDate:
+      description: Некоректная дата
       content:
         application/json:
           schema:
@@ -1049,6 +1327,13 @@ components:
 
     Forbidden:
       description: Нет прав доступа
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    
+    Conflict:
+      description: Уже есть статус
       content:
         application/json:
           schema:
@@ -1106,6 +1391,23 @@ components:
           description: Пароль
       required: [email, password]
 
+    RegisterRequest:
+      type: object
+      description: Данные для регистрации
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          description: Пароль
+        contactNumber:
+          $ref: "#/components/schemas/PhoneNumber"
+      required: [email, password, contactNumber]
+
     RefreshRequest:
       type: object
       properties:
@@ -1133,6 +1435,60 @@ components:
           nullable: true
           description: Refresh token (может отсутствовать/быть null, если не используете)
       required: [tokenType, accessToken, expiresIn]
+
+
+    Profile:
+      type: object
+      description: Данные профиля пользователя
+      properties:
+        name:
+          type: string
+          description: Имя пользователя
+        birthDate:
+          type: string
+          format: date
+          description: Дата рождения
+        contactNumber:
+          $ref: "#/components/schemas/PhoneNumber"
+        email:
+          type: string
+          format: email
+          description: Электронная почта
+        userName:
+          type: string
+          description: Имя пользователя телеграм
+        address:
+          type: string
+          description: Адрес
+
+      required: [name, userName, contactNumber, email]
+
+    ProfilePatch:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Имя пользователя
+        birthDate:
+          type: string
+          format: date
+          description: Дата рождения
+        contactNumber:
+          $ref: "#/components/schemas/PhoneNumber"
+        email:
+          type: string
+          format: email
+          description: Электронная почта
+        userName:
+          type: string
+          description: Имя пользователя телеграм
+        address:
+          type: string
+          description: Адрес
+        password:
+          type: string
+          format: password
+          writeOnly: true
 
     Person:
       type: object
@@ -1253,6 +1609,8 @@ components:
           description: Адрес
       required: [id, name, birthDate, contactNumber, email, userName, address]
 
+
+
     ClientCreate:
       type: object
       properties:
@@ -1323,7 +1681,7 @@ components:
           description: Имя пользователя
         birthDate:
           type: string
-          format: date-time
+          format: date
           description: Дата рождения
         contactNumber:
           $ref: "#/components/schemas/PhoneNumber"
@@ -1369,7 +1727,7 @@ components:
           type: string
         birthDate:
           type: string
-          format: date-time
+          format: date
         contactNumber:
           $ref: "#/components/schemas/PhoneNumber"
         email:
@@ -1413,7 +1771,7 @@ components:
           description: Итоговая цена
         deliveryDate:
           type: string
-          format: date-time
+          format: date
           description: Дата доставки
         orderDate:
           type: string
@@ -1442,7 +1800,7 @@ components:
           type: number
         deliveryDate:
           type: string
-          format: date-time
+          format: date
         orderDate:
           type: string
           format: date-time
@@ -1466,7 +1824,7 @@ components:
           type: number
         deliveryDate:
           type: string
-          format: date-time
+          format: date
         orderDate:
           type: string
           format: date-time
@@ -1705,7 +2063,15 @@ components:
             - $ref: "#/components/schemas/FilePath"
           nullable: true
           description: Путь к фото документов на машину или null
-      required: [id, date, driverLicense, passport, truckDocs]
+        status:
+          type: string
+          format: enum
+          description: Статус
+      required: [id, date, driverLicense, passport, truckDocs, status]
+
+
+    ApplicationEditStatus:
+      type: string
 
     ApplicationCreate:
       type: object
@@ -1728,7 +2094,11 @@ components:
           allOf:
             - $ref: "#/components/schemas/FilePath"
           nullable: true
-      required: [date, driverLicense, passport, truckDocs]
+        status:
+          type: string
+          format: enum
+          description: Статус
+      required: [date, driverLicense, passport, truckDocs, status]
 
     ApplicationPatch:
       type: object
