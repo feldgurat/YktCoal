@@ -1,0 +1,5 @@
+/shelf/
+/__pycache__/
+/app.db
+/data/__pycache__/
+/data/entities/__pycache__/
