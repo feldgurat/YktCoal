@@ -2,33 +2,18 @@ from datetime import date
 from typing import Optional
 
 from sqlmodel import SQLModel, Field, Relationship
+from Base import Base
 
 
-class Person(SQLModel, table=True):
+class Person(Base, table=True):
     __tablename__ = "persons"
 
-    id: Optional[int] = Field(default=None, primary_key=True)
-
     name: str = Field(nullable=False, max_length=255)
-
     birthDate: Optional[date] = Field(default=None)
-
     contactNumber: str = Field(nullable=False, max_length=30, index=True)
-
-    email: str = Field(index=True, unique=True, nullable=False, max_length=320)
-
-    telegramUserName: Optional[str] = Field(
-        default=None, nullable=True, index=True, unique=True, max_length=255
-    )
-
+    email: str = Field(unique=True, nullable=False, max_length=320, index=True)
     telegramUserId: Optional[str] = Field(
         default=None, nullable=True, index=True, unique=True
     )
-
-    hashedPassword: str = Field(nullable=False)
-
+    password_hash: str = Field(nullable=False)
     isAdmin: bool = Field(nullable=False, default=False)
-
-    user: Optional["User"] = Relationship(back_populates="person")
-
-    driver: Optional["Driver"] = Relationship(back_populates="person")

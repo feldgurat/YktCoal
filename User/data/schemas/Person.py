@@ -2,7 +2,7 @@
 
 from datetime import date
 from typing import Optional
-
+from uuid import UUID
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
@@ -16,7 +16,7 @@ class PersonCreate(BaseModel):
     telegramUserId: Optional[str] = None
 
 
-    password: str = Field(min_length=6, max_length=255)
+    password: str = Field(min_length=8, max_length=255)
 
 
     isAdmin: bool = False
@@ -37,7 +37,7 @@ class PersonUpdate(BaseModel):
 class PersonRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
+    id: UUID
     name: str
     birthDate: Optional[date] = None
     contactNumber: str

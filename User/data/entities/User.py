@@ -1,18 +1,11 @@
-
-
 from typing import List, Optional
-
+from uuid import UUID
 from sqlmodel import SQLModel, Field, Relationship
+from Person import Person
 
 
-class User(SQLModel, table=True):
+class User(Person, table=True):
     __tablename__ = "users"
 
-
-    id: int = Field(primary_key=True, foreign_key="persons.id")
-
-
+    id: UUID = Field(primary_key=True, foreign_key="persons.id")
     address: Optional[str] = Field(default=None, max_length=512)
-
-
-    person: "Person" = Relationship(back_populates="user")

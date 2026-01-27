@@ -1,6 +1,7 @@
 
 
-from typing import List, Optional
+from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -12,7 +13,7 @@ class DriverCreate(BaseModel):
 
 
 class DriverCreateForExistingPerson(BaseModel):
-    personId: int
+    personId: UUID
     licenseNumber: str = Field(min_length=1, max_length=64)
 
 
@@ -23,7 +24,7 @@ class DriverUpdate(BaseModel):
 class DriverRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
+    id: UUID
     licenseNumber: str
 
     person: PersonRead

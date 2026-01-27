@@ -1,6 +1,7 @@
 
 
 from typing import List, Optional
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -13,7 +14,7 @@ class UserCreate(BaseModel):
 
 
 class UserCreateForExistingPerson(BaseModel):
-    personId: int
+    personId: UUID
     address: Optional[str] = Field(default=None, max_length=255)
 
 
@@ -24,7 +25,7 @@ class UserUpdate(BaseModel):
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
+    id: UUID
     address: Optional[str] = None
 
     person: PersonRead
