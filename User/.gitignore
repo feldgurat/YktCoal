@@ -3,4 +3,6 @@
 /app.db
 /data/__pycache__/
 /data/entities/__pycache__/
-/venv
+/venv/
+/data/repositories/__pycache__/
+/data/schemas/__pycache__/

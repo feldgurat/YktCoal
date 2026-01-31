@@ -1,13 +1,13 @@
 from datetime import date
 from typing import Optional
+from uuid import UUID, uuid4
 
 from sqlmodel import SQLModel, Field, Relationship
-from Base import Base
 
 
-class Person(Base, table=True):
+class Person(SQLModel, table=True):
     __tablename__ = "persons"
-
+    id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
     name: str = Field(nullable=False, max_length=255)
     birthDate: Optional[date] = Field(default=None)
     contactNumber: str = Field(nullable=False, max_length=30, index=True)

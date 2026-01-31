@@ -18,7 +18,6 @@ def create_engine(url: str = DATABASE_URL) -> AsyncEngine:
     return create_async_engine(
         url,
         echo=True,
-        future=True,
         connect_args=connect_args,
     )
 
