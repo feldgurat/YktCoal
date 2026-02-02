@@ -16,5 +16,5 @@ class PersonRepository(BaseRepository[Person, UUID]):
         return None if person is None else person.isAdmin
 
     def get_admins(self) -> List[Person]:
-        stmt = select(Person).where(Person.isAdmin == True)  # можно и .is_(True)
+        stmt = select(Person).where(Person.isAdmin == True)
         return list(self.session.exec(stmt).all())
