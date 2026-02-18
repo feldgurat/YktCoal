@@ -6,3 +6,4 @@
 /venv/
 /data/repositories/__pycache__/
 /data/schemas/__pycache__/
+/.DS_Store

@@ -7,7 +7,7 @@ from .BaseRepo import BaseRepository
 from data.entities.Person import Person
 
 
-class PersonRepository(BaseRepository[Person, UUID]):
+class PersonRepository(BaseRepository[Person]):
     def __init__(self, session):
         super().__init__(Person, session)
 

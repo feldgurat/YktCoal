@@ -7,9 +7,9 @@ from .BaseRepo import BaseRepository
 from data.entities.Driver import Driver
 
 
-class DriverRepository(BaseRepository[Driver, UUID]):
-    def __init__(self, session):
-        super().__init__(Driver, session)
+class DriverRepository(BaseRepository[Driver]):
+    def __init__(self):
+        super().__init__(Driver)
 
     def get_driver_by_license(self, license_number: str) -> Optional[Driver]:
         stmt = select(Driver).where(Driver.licenseNumber == license_number)

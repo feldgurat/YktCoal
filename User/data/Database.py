@@ -1,11 +1,11 @@
 import os
-from typing import AsyncGenerator
-
+from typing import Annotated, AsyncGenerator
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
 
 
-DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./app.db")
+DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///database.db")
 
 
 def create_engine(url: str = DATABASE_URL) -> AsyncEngine:
@@ -32,13 +32,16 @@ SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
 )
 
 
+
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
     async with SessionLocal() as session:
         yield session
 
+SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 async def init_db() -> None:
 
     async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)

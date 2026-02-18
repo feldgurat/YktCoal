@@ -1,64 +1,69 @@
-from typing import Any, Generic, List, Optional, Protocol, Type, TypeVar
+from typing import Any, Generic, Optional, TypeVar
 from uuid import UUID
-from sqlmodel import SQLModel, Session, select
 
-from data.repositories.exeptions import UniqueViolationError
+from pydantic import EmailStr
+from sqlmodel import SQLModel, select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
-
-T = TypeVar("M", bound=SQLModel)
-K = TypeVar("K", bound=UUID)
+T = TypeVar("T", bound=SQLModel)
 
 
 class BaseRepository(Generic[T]):
-    def __init__(self, model: T, session: Session):
+    def __init__(self, model: type[T]):
         self.model = model
-        #self.session = session
 
-    async def save_entity(self, entity: T) -> Optional[T]:
-        existTUI = await self.session.execute(
-            select(self.model).where(self.model.telegramUserId == entity.telegramUserId)
-        )
-        if existTUI.scalar_one_or_none() is not None:
-            raise UniqueViolationError("telegramUserId", entity.telegramUserId)
-
-        existEmail = await self.session.execute(
-            select(self.model).where(self.model.email == entity.email)
-        )
-        if existEmail.scalar_one_or_none() is not None:
-            raise UniqueViolationError("email", entity.email)
-        
-
-
-        self.session.add(entity)
-        self.session.flush()
+    async def save_entity(self, entity: T, session: AsyncSession) -> T:
+        session.add(entity)
+        await session.flush()
+        await session.refresh(entity)
         return entity
 
-    def update_entity(self, id: K, data: dict[str, Any]) -> Optional[T]:
-        entity = self.session.get(self.model, id)
+    async def update_entity(
+        self,
+        id: UUID,
+        data: dict[str, Any],
+        session: AsyncSession,
+    ) -> Optional[T]:
+        entity = await session.get(self.model, id)
         if entity is None:
             return None
+
         for key, value in data.items():
-            if key == "id":
-                continue
             if hasattr(entity, key):
                 setattr(entity, key, value)
-        self.session.add(entity)
-        self.session.flush()
-        self.session.refresh(entity)
+
+        session.add(entity)
+        await session.flush()
+        await session.refresh(entity)
         return entity
 
-    def delete_entity(self, id: K) -> bool:
-        entity = self.session.get(self.model, id)
+    async def delete_entity(self, id: UUID, session: AsyncSession) -> bool:
+        entity = await session.get(self.model, id)
         if entity is None:
             return False
 
-        self.session.delete(entity)
-        self.session.flush()
+        await session.delete(entity)
+        await session.flush()
         return True
 
-    def get_entities(self, limit: int = 100, skip: int = 0, ) -> List[T]:
+    async def get_entities(
+        self,
+        session: AsyncSession,
+        limit: int = 100,
+        skip: int = 0,
+    ) -> list[T]:
         stmt = select(self.model).offset(skip).limit(limit)
-        return list(self.session.exec(stmt).all())
+        result = await session.exec(stmt)
+        return list(result.all())
 
-    def get_entity(self, id: K) -> Optional[T]:
-        return self.session.get(self.model, id)
+    async def get_entity(self, id: UUID, session: AsyncSession) -> Optional[T]:
+        return await session.get(self.model, id)
+
+    async def get_entity_by_mail(
+        self,
+        mail: EmailStr,
+        session: AsyncSession,
+    ) -> Optional[T]:
+        stmt = select(self.model).where(self.model.email == str(mail))
+        result = await session.exec(stmt)
+        return result.first()
