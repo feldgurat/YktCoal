@@ -1,10 +1,9 @@
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
-from sqlmodel import SQLModel, Field, Relationship
-from Person import Person
+from sqlmodel import SQLModel, Field
 
 
-class User(Person, table=True):
+class User(SQLModel, table=True):
     __tablename__ = "users"
 
     id: UUID = Field(primary_key=True, foreign_key="persons.id")
