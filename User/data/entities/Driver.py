@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 from uuid import UUID
 
 from sqlmodel import Relationship, SQLModel, Field
@@ -13,4 +14,4 @@ class Driver(SQLModel, table=True):
     id: UUID = Field(primary_key=True, foreign_key="persons.id")
     licenseNumber: str = Field(nullable=False, index=True, unique=True, max_length=64)
 
-    human: Person = Relationship(back_populates="driver")
+    person: Person = Relationship(back_populates="driver")

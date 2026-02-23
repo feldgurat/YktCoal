@@ -17,10 +17,10 @@ class Person(Base, table=True):
     isAdmin: bool = Field(nullable=False, default=False)
 
     driver: Optional["Driver"] = Relationship(
-        back_populates="persons",
+        back_populates="person",
         sa_relationship_kwargs={"uselist": False},
     )
-    passenger: Optional["User"] = Relationship(
-        back_populates="persons",
+    user: Optional["User"] = Relationship(
+        back_populates="person",
         sa_relationship_kwargs={"uselist": False},
     )
