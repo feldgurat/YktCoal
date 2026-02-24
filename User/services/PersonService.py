@@ -1,30 +1,34 @@
+from typing import List
 from data.entities.Person import Person
 from data.repositories import PersonRepo
-from data.schemas.Person import PersonCreate
+from data.schemas.Person import PersonCreate, PersonRead
+from data.schemas.User import UserRead
 from sqlmodel.ext.asyncio.session import AsyncSession
-from sqlalchemy.exc import IntegrityError
-
-class EmailAlreadyExistsError(Exception):
-    pass
 
 
-async def add_new_person(
-    person: PersonCreate,
-    session: AsyncSession,
-    repo: PersonRepo,
-) -> Person:
-    existing = await repo.get_entity_by_mail(person.email, session)
-    if existing is not None:
-        raise EmailAlreadyExistsError("Email already exists")
+
+async def add_new_person(person: PersonCreate, session: AsyncSession) -> UserRead:
+    personRepo: PersonRepo = PersonRepo.PersonRepository()
+    existingUser = await personRepo.get_entity_by_number(person.contactNumber, session)
+    if existingUser is not None:
+        raise Exception("Person с таким номером уже существует")
+
+
 
     entity = Person(**person.model_dump())
 
-    session.add(entity)
     try:
-        await session.flush()
-        await session.refresh(entity)
-    except IntegrityError as e:
+        entity = await personRepo.save_entity(entity, session)
+        await session.commit()
+    except Exception as e:
         await session.rollback()
-        raise EmailAlreadyExistsError("Email already exists") from e
+        raise e
 
     return entity
+
+async def get_all_persons(session: AsyncSession) -> List[PersonRead]:
+    personRepo: PersonRepo = PersonRepo.PersonRepository()
+    try:
+        return await personRepo.get_entities(session)
+    except Exception as e:
+        raise e

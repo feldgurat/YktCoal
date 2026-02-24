@@ -1,7 +1,7 @@
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, List, Optional, TypeVar
 from uuid import UUID
 
-from pydantic import EmailStr
+from pydantic_extra_types.phone_numbers import PhoneNumber
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -51,19 +51,19 @@ class BaseRepository(Generic[T]):
         session: AsyncSession,
         limit: int = 100,
         skip: int = 0,
-    ) -> list[T]:
+    ) -> List[T]:
         stmt = select(self.model).offset(skip).limit(limit)
-        result = await session.exec(stmt)
-        return list(result.all())
+        result = await session.execute(stmt)
+        return result.scalars().all()
 
     async def get_entity(self, id: UUID, session: AsyncSession) -> Optional[T]:
         return await session.get(self.model, id)
 
-    async def get_entity_by_mail(
+    async def get_entity_by_number(
         self,
-        mail: EmailStr,
+        contactNumber: PhoneNumber,
         session: AsyncSession,
     ) -> Optional[T]:
-        stmt = select(self.model).where(self.model.email == str(mail))
-        result = await session.exec(stmt)
-        return result.first()
+        stmt = select(self.model).where(self.model.contactNumber == str(contactNumber))
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()

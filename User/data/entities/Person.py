@@ -1,4 +1,5 @@
 from typing import Optional
+from uuid import UUID, uuid4
 
 from sqlmodel import Field, Relationship
 
@@ -9,6 +10,7 @@ from data.entities.User import User
 
 class Person(Base, table=True):
     __tablename__ = "persons"
+    id: UUID = Field(default_factory=uuid4, primary_key=True)
     name: str = Field(nullable=False, max_length=255)
     contactNumber: str = Field(nullable=False, max_length=30, index=True)
     telegramUserId: Optional[str] = Field(
@@ -17,10 +19,11 @@ class Person(Base, table=True):
     isAdmin: bool = Field(nullable=False, default=False)
 
     driver: Optional["Driver"] = Relationship(
-        back_populates="person",
-        sa_relationship_kwargs={"uselist": False},
+        sa_relationship_kwargs={"uselist": False,
+                                "primaryjoin": "Person.id == Driver.id",},
+        
     )
     user: Optional["User"] = Relationship(
-        back_populates="person",
-        sa_relationship_kwargs={"uselist": False},
+        sa_relationship_kwargs={"uselist": False,
+                                "primaryjoin": "Person.id == User.id",},
     )

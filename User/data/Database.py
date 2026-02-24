@@ -29,19 +29,20 @@ SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
     expire_on_commit=False,
+    autoflush=False,
 )
 
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-
-    async with SessionLocal() as session:
+    session = SessionLocal()
+    try:
         yield session
+    finally:
+        await session.close()
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 async def init_db() -> None:
-
     async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)

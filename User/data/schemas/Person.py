@@ -1,9 +1,6 @@
-
-
-from datetime import date
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class PersonCreate(BaseModel):

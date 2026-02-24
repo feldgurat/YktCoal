@@ -1,23 +1,28 @@
-
-
 from typing import Optional
 from uuid import UUID
-
+from pydantic_extra_types.phone_numbers import PhoneNumber
 from pydantic import BaseModel, ConfigDict, Field
 
-from Person import PersonRead
+from Person import PersonCreate, PersonRead, PersonUpdate
 
-
-
-class DriverCreateForExistingPerson(BaseModel):
+class DriverCreate(PersonCreate):
     model_config = ConfigDict(extra="forbid")
-    personId: UUID
     licenseNumber: str = Field(min_length=1, max_length=64)
 
-
-class DriverUpdate(BaseModel):
+class DriverCreateForExistingPersonId(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    personId: UUID
+    id: UUID
+    licenseNumber: str = Field(min_length=1, max_length=64)
+
+class DriverCreateForExistingPersonContactNumber(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    contactNumber: PhoneNumber = Field(min_length=1, max_length=30)
+    licenseNumber: str = Field(min_length=1, max_length=64)
+
+class DriverUpdate(PersonUpdate):
+    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
     licenseNumber: Optional[str] = Field(default=None, min_length=1, max_length=64)
 
 

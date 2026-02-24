@@ -6,13 +6,15 @@ from .Person import PersonCreate, PersonRead
 
 class UserCreateForExistingPerson(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    personId: UUID
+    id: UUID
     address: Optional[str] = Field(default=None, max_length=255)
 
 class UserUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
+    id: UUID
     address: Optional[str] = Field(default=None, max_length=255)
 
-class UserRead(PersonRead):
+class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+    id: UUID
     address: Optional[str] = None
