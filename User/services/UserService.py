@@ -24,9 +24,7 @@ async def add_new_user(user: UserCreateForExistingPerson, session: AsyncSession)
 
     try:
         entity = await userRepo.save_entity(entity, session)
-        await session.commit()
     except Exception as e:
-        await session.rollback()
         raise e
 
     return entity

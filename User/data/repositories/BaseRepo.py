@@ -67,3 +67,12 @@ class BaseRepository(Generic[T]):
         stmt = select(self.model).where(self.model.contactNumber == str(contactNumber))
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_entity_by_telegram_user_id(
+        self,
+        telegramUserId: str,
+        session: AsyncSession,
+    ) -> Optional[T]:
+        stmt = select(self.model).where(self.model.telegramUserId == str(telegramUserId))
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none()

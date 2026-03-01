@@ -12,16 +12,17 @@ async def add_new_person(person: PersonCreate, session: AsyncSession) -> UserRea
     existingUser = await personRepo.get_entity_by_number(person.contactNumber, session)
     if existingUser is not None:
         raise Exception("Person с таким номером уже существует")
-
+    
+    existingUser = await personRepo.get_entity_by_telegram_user_id(person.telegramUserId, session)
+    if existingUser is not None:
+        raise Exception("Person с таким telegramUserId уже существует")
 
 
     entity = Person(**person.model_dump())
 
     try:
         entity = await personRepo.save_entity(entity, session)
-        await session.commit()
     except Exception as e:
-        await session.rollback()
         raise e
 
     return entity
