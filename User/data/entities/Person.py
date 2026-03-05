@@ -17,6 +17,7 @@ class Person(Base, table=True):
         default=None, nullable=True, index=True, unique=True
     )
     isAdmin: bool = Field(nullable=False, default=False)
+    token_version: int = Field(default=0, nullable=False)
 
     driver: Optional["Driver"] = Relationship(
         sa_relationship_kwargs={"uselist": False,

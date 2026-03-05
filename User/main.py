@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import uvicorn
-from data.Database import init_db
+from data.Database import close_redis, init_db, init_redis
 from api.User import router as user_router
 from api.Auth import router as auth_router
 
@@ -9,7 +9,9 @@ from api.Auth import router as auth_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await init_db()
+    await init_redis()
     yield
+    await close_redis()
 
 
 app = FastAPI(lifespan=lifespan)

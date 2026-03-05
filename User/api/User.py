@@ -20,8 +20,10 @@ def root():
 async def add_person(person: PersonCreate, session: SessionDep):
     try:
         new_person = await add_new_person(person, session)
+        await session.commit()
         return new_person
     except Exception as e:
+        await session.rollback()
         raise HTTPException(status_code=409, detail=str(e))
 
 @router.get("/persons", response_model=List[PersonRead], status_code=status.HTTP_200_OK)

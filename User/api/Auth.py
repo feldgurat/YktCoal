@@ -1,63 +1,154 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, HTTPException, status
-import httpx
 
 from data.Database import SessionDep
-from data.schemas.Person import PersonCreate
-from data.schemas.User import UserReadFull
-from services.PersonService import add_new_person
-from services.UserService import add_new_user
+from data.schemas.Auth import RefreshIn, SmsCodeRequestAnswer, SmsRequestIn, SmsVerifyIn, TokenPair
+from services.AuthService import OTP_TTL_SECONDS, add_new_sms_code, add_token_to_blacklist, create_access_token, create_refresh_token, decode_token, generate_code, get_actual_sms_code, hash_code, invalide_old_codes, is_token_blacklisted, normalize_phone, resending_prot, send_sms_via_exolve
+from services.Exeptions import InvalidToken, InvalidTokenType, OtpRateLimitError, TokenHasExpired
+from services.PersonService import get_person_by_id, get_person_by_number, is_user_exist_by_number
+
 
 
 router = APIRouter()
 
 
-EXOLVE_API_URL = "https://api.exolve.ru/messaging/v1/SendSMS"
-EXOLVE_API_KEY = "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJRV05sMENiTXY1SHZSV29CVUpkWjVNQURXSFVDS0NWODRlNGMzbEQtVHA0In0.eyJleHAiOjIwODcxOTAwNzksImlhdCI6MTc3MTgzMDA3OSwianRpIjoiNzM1YTZjYTktY2Y0Yi00ZDljLTk0MWItYzkzN2E5NDU5YjFhIiwiaXNzIjoiaHR0cHM6Ly9zc28uZXhvbHZlLnJ1L3JlYWxtcy9FeG9sdmUiLCJhdWQiOiJhY2NvdW50Iiwic3ViIjoiYmNkMjFlYTUtYTQ0Ny00MWQ4LTk2ZTgtN2FmMWE2NTc0OGU3IiwidHlwIjoiQmVhcmVyIiwiYXpwIjoiYzk5NjJkNjUtYzdiZC00YzU0LWFkZDItNTBlY2U1ZDU2NDk5Iiwic2Vzc2lvbl9zdGF0ZSI6IjQ4ZTVjN2Y1LTI2MWYtNGMzNi04ZDQzLTA1ZDVhNDIwYTc4OCIsImFjciI6IjEiLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1leG9sdmUiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJleG9sdmVfYXBwIHByb2ZpbGUgZW1haWwiLCJzaWQiOiI0OGU1YzdmNS0yNjFmLTRjMzYtOGQ0My0wNWQ1YTQyMGE3ODgiLCJ1c2VyX3V1aWQiOiI1MzI1N2FkMy1mNzVkLTQ0MmUtYWUwMS1jNDhlMGZjNDNmOTAiLCJjbGllbnRIb3N0IjoiMTcyLjE2LjE2MS4xOSIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiY2xpZW50SWQiOiJjOTk2MmQ2NS1jN2JkLTRjNTQtYWRkMi01MGVjZTVkNTY0OTkiLCJhcGlfa2V5Ijp0cnVlLCJhcGlmb25pY2Ffc2lkIjoiYzk5NjJkNjUtYzdiZC00YzU0LWFkZDItNTBlY2U1ZDU2NDk5IiwiYmlsbGluZ19udW1iZXIiOiIxMzU3Njc0IiwiYXBpZm9uaWNhX3Rva2VuIjoiYXV0ZWRiYzZjYjgtNGNiYy00YzUzLThlYTEtMGJjZGFmM2NkNjZiIiwicHJlZmVycmVkX3VzZXJuYW1lIjoic2VydmljZS1hY2NvdW50LWM5OTYyZDY1LWM3YmQtNGM1NC1hZGQyLTUwZWNlNWQ1NjQ5OSIsImN1c3RvbWVyX2lkIjoiMTU1Njg4IiwiY2xpZW50QWRkcmVzcyI6IjE3Mi4xNi4xNjEuMTkifQ.fXlQNRyi4c7lzvjHGj2XWNkiumRgJ1QIhuU4sCsUKZvV6KBkTNB1JefWY6pBnLphSjyMLzHOBLryFqj-0IJcxn3naLFN8_38Bm4Ai5CE417Ltv2YYIiby4G-JZ03wxls4TOOn8BVChAtwWNNknhA1EGluIgjCxs5PfdmYqjkZUy0bifRAUtVxfY20KYqOaAOVcrd72IkZ48y1DZPeaEx8-hc69lz95CHNCTFk7LmSMJQt5yeV4Jgl-vYKIIWk5Q6PA6ktDfL09vOjvdn3sXaB8GK37LHuq-Ci6sMGmniaDAWUdKh-kkhoDwwL5hE0UKdf7OtWK1lf_DLOl2OrUguZA"  # используйте os.getenv("EXOLVE_API_KEY")
 
-
-@router.post("/send-sms")
-async def send_sms():
-    payload = {
-        "number": "79587363725",
-        "text": "Test",
-        "destination": "79644191716"
-    }
-
-    headers = {
-        "Authorization": f"Bearer {EXOLVE_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                EXOLVE_API_URL,
-                json=payload,
-                headers=headers,
-                timeout=10.0 
-            )
-            response.raise_for_status()
-        except httpx.TimeoutException:
-            raise HTTPException(status_code=504, detail="API Exolve не ответил вовремя")
-        except httpx.HTTPStatusError as e:
-            raise HTTPException(
-                status_code=e.response.status_code,
-                detail=f"Ошибка от Exolve: {e.response.text}"
-            )
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Внутренняя ошибка: {str(e)}")
-    return {"status": "success", "data": response.json()}
-
-
-@router.post("/register", response_model=UserReadFull, status_code=status.HTTP_201_CREATED)
-async def register(user: PersonCreate, session: SessionDep):
+@router.post("/auth/sign-in-code-request"
+             #, response_model=SmsCodeRequestAnswer
+             )
+async def sms_code_request(
+    data: SmsRequestIn,
+    session: SessionDep,
+):
     try:
-        new_person = await add_new_person(user, session)
-        new_user = await add_new_user(new_person, session)
-        new = new_person.model_dump()
-        new["address"] = new_user.model_dump()["address"]
-        await session.commit()
-        return new
+        phone = normalize_phone(data.phone)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    if not await is_user_exist_by_number(phone, session):
+        raise HTTPException(status_code=409, detail="Пользователя с таким номером нет в системе")
+        
+
+    try:
+        await resending_prot(phone, session)
     except Exception as e:
-        await session.rollback()
-        raise HTTPException(status_code=409, detail=str(e))
+        if isinstance(e, OtpRateLimitError):
+            raise HTTPException(status_code=429, detail="Попробуйте запросить код чуть позже")
+        raise
+    
+
+    code = generate_code()
+    code_hash = hash_code(phone, code)
+    expires_at = datetime.utcnow() + timedelta(seconds=OTP_TTL_SECONDS)
+
+    text = f"Ваш код подтверждения: {code}"
+
+    # сначала отправляем SMS
+    # await send_sms_via_exolve(destination=phone, text=text)
+
+    await invalide_old_codes(phone, session)
+
+    await add_new_sms_code(phone, code_hash, expires_at, session)
+    await session.commit()
+
+    return {"status": "ok", "message": "Код отправлен", "code": code}
+
+
+@router.post("/auth/sign-in-code-answer", response_model=TokenPair)
+async def sms_code_answer(
+    data: SmsVerifyIn,
+    session: SessionDep,
+):
+    try:
+        phone = normalize_phone(data.phone)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    user = await get_person_by_number(phone, session)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Пользователь не найден",
+        )
+
+    sms_code = await get_actual_sms_code(phone, session)
+    if not sms_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Код не найден",
+        )
+
+    now = datetime.now(timezone.utc)
+
+    expires_at = sms_code.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < now:
+        raise HTTPException(status_code=400, detail="Срок действия кода истёк")
+    
+    if sms_code.code_hash != hash_code(phone, data.code):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Неверный код",
+        )
+
+    # одноразовый код -> помечаем использованным / инвалидируем
+    await invalide_old_codes(phone, session)
+
+    access_token = create_access_token(str(user.id))
+    refresh_token = create_refresh_token(
+        user_id=str(user.id),
+        version=user.token_version,   # поле в БД
+    )
+
+    await session.commit()
+
+    return TokenPair(
+        access_token=access_token,
+        refresh_token=refresh_token,
+    )
+
+@router.post("/auth/refresh", response_model=TokenPair)
+async def refresh_tokens(
+    data: RefreshIn,
+    session: SessionDep,
+):
+    try:
+        payload = decode_token(data.refresh_token, expected_type="refresh")
+    except TokenHasExpired as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e.message))
+    except InvalidToken as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e.message))
+    except InvalidTokenType as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e.message))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    jti = payload["jti"]
+    user_id = payload["sub"]
+    token_version = payload.get("ver")
+
+    # 1. check blacklist
+    if await is_token_blacklisted(jti):
+        raise HTTPException(status_code=401, detail="Токен отозван")
+
+    user = await get_person_by_id(user_id, session)
+    if not user:
+        raise HTTPException(status_code=401, detail="Пользователь не найден")
+
+    # 2. check version
+    if token_version != user.token_version:
+        raise HTTPException(status_code=401, detail="Токен устарел")
+
+    # 3. rotate refresh token: старый в blacklist
+    exp_ts = payload["exp"]
+    await add_token_to_blacklist(jti=jti, exp_ts=exp_ts)
+
+    access_token = create_access_token(str(user.id))
+    refresh_token = create_refresh_token(str(user.id), user.token_version)
+
+    return TokenPair(
+        access_token=access_token,
+        refresh_token=refresh_token,
+    )
