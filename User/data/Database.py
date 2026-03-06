@@ -6,7 +6,7 @@ from sqlmodel import SQLModel
 
 
 DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///database.db")
-REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+REDIS_URL: str = os.getenv("REDIS_URL", "redis://default:cCNeFrB1w5a1onpg7eG0WtFae1@yktcoal.feldgurat.ru:6379/0")
 
 def create_engine(url: str = DATABASE_URL) -> AsyncEngine:
 

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import uuid
 
 from fastapi import APIRouter, HTTPException, status
 
@@ -127,6 +128,8 @@ async def refresh_tokens(
 
     jti = payload["jti"]
     user_id = payload["sub"]
+    if isinstance(user_id, str):
+        user_id = uuid.UUID(user_id)
     token_version = payload.get("ver")
 
     # 1. check blacklist
