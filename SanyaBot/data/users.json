@@ -1,0 +1,22 @@
+{
+  "629157492": {
+    "telegram_id": 629157492,
+    "phone_number": "79243696909",
+    "username": "Argun_off",
+    "first_name": "Александр",
+    "last_name": null,
+    "is_registered": true,
+    "created_at": "2026-03-10 12:54:39.503879",
+    "updated_at": "2026-03-10 12:54:39.503896"
+  },
+  "736097601": {
+    "telegram_id": 736097601,
+    "phone_number": "79243683083",
+    "username": "kolurit",
+    "first_name": "kolurit",
+    "last_name": null,
+    "is_registered": true,
+    "created_at": "2026-03-10 14:27:11.672717",
+    "updated_at": "2026-03-10 14:27:11.672746"
+  }
+}
