@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom"
 import bgImage from '../assets/coal2.jpg';
+import lightImage from '../assets/light.png';
 
 export const Landing = () => {
   return (
@@ -13,10 +14,10 @@ export const Landing = () => {
               <span className="font-montserrat font-semibold text-lg text-white">Доставка угля в Якутске</span>
             </div>
             <nav className="flex gap-8 mt-7">
-              <a href="#" className="font-montserrat text-[20px] font-bold text-white">
+              <a href="#" className="hover:underline underline-offset-6 font-montserrat text-[20px] font-bold text-white">
                 Перейти в ТГ-бота
               </a>
-              <Link to="/orders" className="font-montserrat text-[20px] font-bold text-white">
+              <Link to="/orders" className="hover:underline underline-offset-6 font-montserrat text-[20px] font-bold text-white">
                 Войти в систему
               </Link>
             </nav>
@@ -30,7 +31,11 @@ export const Landing = () => {
             <br></br> качественного угля по Якутску и <br></br>
             пригороду. Работаем с физическими <br></br>и юридическими лицами
           </a>
-          <a className="text-[25px] font-montserrat font-semibold text-white border-2 rounded-[6px] px-6 py-2">Как это работает?</a>
+          <a href="#howitworks" 
+          className="text-[25px] font-montserrat font-semibold text-white border-2 rounded-[6px] px-6 py-2
+          transition-colors duration-300 hover:bg-white hover:text-black">
+            Как это работает?
+          </a>
         </div>
       </div>
 
@@ -43,7 +48,7 @@ export const Landing = () => {
           <div className="w-[317px] h-[317px] bg-white 
           shadow-[0_0_33px_7px_rgba(0,0,0,0.25)] rounded-[11px]
           flex flex-col items-center gap-2">
-            <div className="w-[38px] h-[64px] bg-[#2C87FF] rounded-[2px] mt-8"></div>
+            <div style={{ backgroundImage: `url(${lightImage})`}} className="w-[42px] h-[64px] bg-contain bg-cover rounded-[2px] mt-8"></div>
             <h3 className="font-['Dela_Gothic_One'] text-2xl text-center text-black">
               24/7
             </h3>
@@ -55,7 +60,7 @@ export const Landing = () => {
           <div className="w-[317px] h-[317px] bg-white 
           shadow-[0_0_33px_7px_rgba(0,0,0,0.25)] rounded-[11px]
           flex flex-col items-center gap-2">
-            <div className="w-[38px] h-[64px] bg-[#2C87FF] rounded-[2px] mt-8"></div>
+            <div style={{ backgroundImage: `url(${lightImage})`}} className="w-[42px] h-[64px] bg-contain bg-cover rounded-[2px] mt-8"></div>
             <h3 className="font-['Dela_Gothic_One'] text-2xl leading-[35px] text-center text-black">
               Гарантия качества
             </h3>
@@ -67,7 +72,7 @@ export const Landing = () => {
           <div className="w-[317px] h-[317px] bg-white 
           shadow-[0_0_33px_7px_rgba(0,0,0,0.25)] rounded-[11px]
           flex flex-col items-center gap-2">
-            <div className="  w-[38px] h-[64px] bg-[#2C87FF] rounded-[2px] mt-8"></div>
+            <div style={{ backgroundImage: `url(${lightImage})`}} className="w-[42px] h-[64px] bg-contain bg-cover rounded-[2px] mt-8"></div>
             <h3 className="  font-['Dela_Gothic_One'] text-2xl leading-[35px] text-center text-black">
               Доступные цены
             </h3>
@@ -81,13 +86,13 @@ export const Landing = () => {
           <a className="font-montserrat 
           font-semibold text-[24px]  
           px-5 py-4 rounded-[10px] bg-blue-500 text-white
-          hover:bg-[#3d90fc] transition">
+          hover:bg-[#3d90fc] transition-all hover:scale-102">
             <Link to="/orders">Сделать заказ</Link>
           </a>  
         </div>
       </div>
 
-      <div className="h-screen w-full bg-gray-100 pl-30 pr-30">
+      <div className="h-screen w-full bg-gray-100 pl-30 pr-30" id="howitworks">
         <div className="text-center pt-15 items-center gap-3 flex flex-col">
           <a className="font-dela text-[44px]">Как это работает?</a>
           <hr className="border-none h-1 bg-blue-500 w-50"></hr>
