@@ -1,5 +1,6 @@
 from typing import List
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from api.dependencies import CurrentAdminDep, get_current_person
 from data.Database import SessionDep
 from data.schemas.Person import PersonCreate, PersonRead
 from data.schemas.User import UserCreateForExistingPerson, UserRead
@@ -8,6 +9,9 @@ from services.UserService import add_new_user, get_all_users
 
 router = APIRouter()
 
+router = APIRouter(
+    dependencies=[Depends(get_current_person)]
+)
 
 @router.get("/")
 def root():

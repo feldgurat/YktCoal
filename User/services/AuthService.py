@@ -31,14 +31,15 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 15
 REFRESH_TOKEN_EXPIRE_DAYS = 30
 
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id: str, version: int) -> str:
     now = datetime.now(timezone.utc)
     payload = {
-        "sub": user_id,                # id пользователя
-        "type": "access",              # тип токена
-        "iat": now,                    # issued at
+        "sub": user_id,
+        "type": "access",
+        "iat": now,
         "exp": now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
-        "jti": str(uuid4()),           # уникальный id токена
+        "jti": str(uuid4()),
+        "ver": version,
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -51,7 +52,7 @@ def create_refresh_token(user_id: str, version: int) -> str:
         "iat": now,
         "exp": now + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
         "jti": str(uuid4()),
-        "ver": version,                # версия учётных данных / токенов
+        "ver": version,
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -61,26 +62,15 @@ def decode_token(token: str, expected_type: str) -> dict:
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM],
-            options={
-                "require": ["sub", "type", "exp", "iat", "jti"],
-            },
+            options={"require": ["sub", "type", "exp", "iat", "jti"]},
         )
     except jwt.ExpiredSignatureError:
-        raise TokenHasExpired(
-            status_code=401,
-            detail="Токен истёк",
-        )
+        raise TokenHasExpired(status_code=401, message="Токен истёк")
     except jwt.InvalidTokenError:
-        raise InvalidToken(
-            status_code=401,
-            detail="Некорректный токен",
-        )
+        raise InvalidToken(status_code=401, message="Некорректный токен")
 
     if payload.get("type") != expected_type:
-        raise InvalidTokenType(
-            status_code=401,
-            detail="Неверный тип токена",
-        )
+        raise InvalidTokenType(status_code=401, message="Неверный тип токена")
 
     return payload
 

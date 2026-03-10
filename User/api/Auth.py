@@ -45,7 +45,6 @@ async def sms_code_request(
 
     text = f"Ваш код подтверждения: {code}"
 
-    # сначала отправляем SMS
     # await send_sms_via_exolve(destination=phone, text=text)
 
     await invalide_old_codes(phone, session)
@@ -94,16 +93,15 @@ async def sms_code_answer(
             detail="Неверный код",
         )
 
-    # одноразовый код -> помечаем использованным / инвалидируем
     await invalide_old_codes(phone, session)
+    await session.commit()
 
-    access_token = create_access_token(str(user.id))
+    access_token = create_access_token(str(user.id), user.token_version)
     refresh_token = create_refresh_token(
         user_id=str(user.id),
-        version=user.token_version,   # поле в БД
+        version=user.token_version,
     )
 
-    await session.commit()
 
     return TokenPair(
         access_token=access_token,
@@ -132,7 +130,6 @@ async def refresh_tokens(
         user_id = uuid.UUID(user_id)
     token_version = payload.get("ver")
 
-    # 1. check blacklist
     if await is_token_blacklisted(jti):
         raise HTTPException(status_code=401, detail="Токен отозван")
 
@@ -140,15 +137,13 @@ async def refresh_tokens(
     if not user:
         raise HTTPException(status_code=401, detail="Пользователь не найден")
 
-    # 2. check version
     if token_version != user.token_version:
         raise HTTPException(status_code=401, detail="Токен устарел")
 
-    # 3. rotate refresh token: старый в blacklist
     exp_ts = payload["exp"]
     await add_token_to_blacklist(jti=jti, exp_ts=exp_ts)
 
-    access_token = create_access_token(str(user.id))
+    access_token = create_access_token(str(user.id), user.token_version)
     refresh_token = create_refresh_token(str(user.id), user.token_version)
 
     return TokenPair(
