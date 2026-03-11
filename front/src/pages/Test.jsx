@@ -4,8 +4,8 @@ import Button from '../components/Button'
 export const Test = () => {
   return (
     <>
-      <div>Test</div>
-      <Button></Button>
+      <div className='h-screen bg-red-100'>Test</div>
+      
     </>
   )
 }

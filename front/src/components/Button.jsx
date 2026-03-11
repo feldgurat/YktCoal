@@ -15,13 +15,9 @@ const Button = () => {
         setResponseMessage('');
 
     try {
-        // Отправляем POST-запрос с данными
         const response = await axios.get(`${API_URL}/`, {
-            headers: {"Authorization" : "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlOGViNjM4OC03MmI4LTQ3ZmUtYTZjMi04YmRjNzE0MDFjYmIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzczMTI2MDQ3LCJleHAiOjE3NzMxMjY5NDcsImp0aSI6IjU1YjFlYTUyLTQ5NjItNGM3MS1hNmUyLTZjYTQwZjM0MWU4MyIsInZlciI6MH0.DVOyFgLavM9y8LiUlQBNk2W39ykyk5W5Y-mL1QFgmtI"} ,
-            // data:{
-            //     name: name,
-            // }
-        // можно добавить другие поля
+            headers: {"Authorization" : "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJlOGViNjM4OC03MmI4LTQ3ZmUtYTZjMi04YmRjNzE0MDFjYmIiLCJ0eXBlIjoiYWNjZXNzIiwiaWF0IjoxNzczMjI4OTUxLCJleHAiOjE3NzMyMjk4NTEsImp0aSI6ImEwYmU0NjBiLTVkYjMtNDY2Yi1iZjgwLTgzOTFmMDAzNDYxOCIsInZlciI6MH0.aFaU4b1oR5xRrndK8wuMiwDeVsoh_aKWiSV9Bd6_4kw"} ,
+
         });
 
         // Обрабатываем успешный ответ

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom"
 import bgImage from '../assets/coal2.jpg';
 import lightImage from '../assets/light.png';
+import { Footer } from "../components/Footer";
 
 export const Landing = () => {
   return (
@@ -17,7 +18,7 @@ export const Landing = () => {
               <a href="#" className="hover:underline underline-offset-6 font-montserrat text-[20px] font-bold text-white">
                 Перейти в ТГ-бота
               </a>
-              <Link to="/Test" className="hover:underline underline-offset-6 font-montserrat text-[20px] font-bold text-white">
+              <Link to="/Login" className="hover:underline underline-offset-6 font-montserrat text-[20px] font-bold text-white">
                 Войти в систему
               </Link>
             </nav>
@@ -31,15 +32,15 @@ export const Landing = () => {
             <br></br> качественного угля по Якутску и <br></br>
             пригороду. Работаем с физическими <br></br>и юридическими лицами
           </a>
-          <a href="#howitworks" 
+          <a href="#whyus" 
           className="text-[25px] font-montserrat font-semibold text-white border-2 rounded-[6px] px-6 py-2
           transition-colors duration-300 hover:bg-white hover:text-black">
-            Как это работает?
+            Почему мы?
           </a>
         </div>
       </div>
 
-      <div className="h-screen w-full bg-white pl-40 pr-40">
+      <div className="h-screen w-full bg-white pl-40 pr-40" id="whyus">
         <div className="text-center pt-15 items-center gap-3 flex flex-col">
           <a className="font-dela text-[44px]">Почему мы?</a>
           <hr className="border-none h-1 bg-blue-500 w-50"></hr>
@@ -82,12 +83,12 @@ export const Landing = () => {
           </div>
 
         </div>
-        <div className="items center justify-center flex mt-20">
-          <a className="font-montserrat 
+        <div className="items center justify-center flex mt-20" >
+          <a href="#howitworks" className="font-montserrat 
           font-semibold text-[24px]  
           px-5 py-4 rounded-[10px] bg-blue-500 text-white
           hover:bg-[#3d90fc] transition-all hover:scale-102">
-            <Link to="/Test">Сделать заказ</Link>
+            Как это работает?
           </a>  
         </div>
       </div>
@@ -97,7 +98,16 @@ export const Landing = () => {
           <a className="font-dela text-[44px]">Как это работает?</a>
           <hr className="border-none h-1 bg-blue-500 w-50"></hr>
         </div>
+        <div className="items center justify-center flex mt-20">
+          <a className="font-montserrat 
+          font-semibold text-[24px]  
+          px-5 py-4 rounded-[10px] bg-blue-500 text-white
+          hover:bg-[#3d90fc] transition-all hover:scale-102">
+            <Link to="/Test">Сделать заказ</Link>
+          </a>  
+        </div>
       </div>
+      <Footer></Footer>
     </>
   )
   

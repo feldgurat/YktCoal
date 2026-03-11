@@ -8,6 +8,7 @@ import { Profile } from './pages/Profile'
 import { Requests } from './pages/Requests'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'
+import Login from './pages/Login';
 
 function App() {
 
@@ -16,6 +17,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Landing />} />
+            <Route path="/login" element={<Login />} />
 
           <Route element={<MainLayout />}>
             <Route path="/test" element={<Test />} />
