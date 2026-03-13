@@ -3,11 +3,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from api.dependencies import CurrentAdminDep, get_current_person
 from data.Database import SessionDep
 from data.schemas.Person import PersonCreate, PersonRead
-from data.schemas.User import UserCreateForExistingPerson, UserRead
+from data.schemas.User import UserCreateForExistingPerson, UserRead, UserReadFull
 from services.PersonService import add_new_person, get_all_persons
 from services.UserService import add_new_user, get_all_users
 
-router = APIRouter()
 
 router = APIRouter(
     dependencies=[Depends(get_current_person)]
@@ -55,5 +54,10 @@ async def get_users_list(session: SessionDep):
 
 
 @router.get("/users/{id}")
-async def get_users_list(session: SessionDep):
+async def get_user(session: SessionDep):
     pass 
+
+
+@router.get("/api/my_profile", response_model=UserReadFull)
+async def get_my_profile(session: SessionDep, current_person = Depends(get_current_person),):
+    return current_person
