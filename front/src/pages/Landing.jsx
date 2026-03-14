@@ -89,7 +89,8 @@ export const Landing = () => {
           px-5 py-4 rounded-[10px] bg-blue-500 text-white
           hover:bg-[#3d90fc] transition-all hover:scale-102">
             Как это работает?
-          </a>  
+          </a>
+            
         </div>
       </div>
 
@@ -107,6 +108,9 @@ export const Landing = () => {
           </a>  
         </div>
       </div>
+
+      
+
       <Footer></Footer>
     </>
   )

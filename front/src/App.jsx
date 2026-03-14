@@ -4,7 +4,7 @@ import MainLayout from './layouts/MainLayout';
 import { Landing } from './pages/Landing'
 import { Test } from './pages/Test'
 import { Orders } from './pages/Orders'
-import { Profile } from './pages/Profile'
+import Profile from './pages/Profile'
 import { Requests } from './pages/Requests'
 import { Header } from './components/Header'
 import { Footer } from './components/Footer'

@@ -21,7 +21,7 @@ export const Header = () => {
               Мои заказы
             </a>
             <a href="#" className="font-montserrat font-semibold text-lg text-black hover:underline underline-offset-4тз">
-              Профиль
+              <Link to="/profile">Профиль</Link>
             </a>
           </nav>
         </div>
