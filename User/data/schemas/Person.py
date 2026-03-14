@@ -1,24 +1,30 @@
-from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field
+
+from pydantic import BaseModel, ConfigDict
 
 
-class PersonCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=255)
-    contactNumber: str = Field(min_length=1, max_length=30)
-    telegramUserId: Optional[str] = None
+class ORMReadModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
 
+class PersonBase(BaseModel):
+    name: str
+    contact_number: str
+    telegram_user_id: str | None = None
+
+
+class PersonCreate(PersonBase):
+    pass
 
 class PersonUpdate(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=1, max_length=255)
-    contactNumber: Optional[str] = Field(default=None, min_length=1, max_length=30)
-    telegramUserId: Optional[str] = None
+    name: str | None = None
+    contact_number: str | None = None
+    telegram_user_id: str | None = None
+    token_version: int | None = None
 
 
-class PersonRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
+class PersonRead(ORMReadModel):
     id: UUID
     name: str
-    contactNumber: str
-    telegramUserId: Optional[str] = None
-    isAdmin: bool
+    contact_number: str
+    telegram_user_id: str | None = None
+    token_version: int

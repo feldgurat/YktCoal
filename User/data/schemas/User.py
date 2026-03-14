@@ -1,24 +1,29 @@
-from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field
 
-from .Person import PersonCreate, PersonRead
+from pydantic import BaseModel
 
-class UserCreateForExistingPerson(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    id: UUID
-    address: Optional[str] = Field(default=None, max_length=255)
+from data.schemas.Person import ORMReadModel, PersonCreate, PersonRead, PersonUpdate
+
+class UserBase(BaseModel):
+    address: str | None = None
+
+
+# POST /persons/{person_id}/user
+class UserCreate(UserBase):
+    pass
+
+
+# POST /users
+class UserCreateWithPerson(UserBase):
+    person: PersonCreate
+
 
 class UserUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    id: UUID
-    address: Optional[str] = Field(default=None, max_length=255)
+    address: str | None = None
+    person: PersonUpdate | None = None
 
-class UserRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: UUID
-    address: Optional[str] = None
 
-class UserReadFull(PersonRead):
-    model_config = ConfigDict(extra="forbid")
-    address: Optional[str] = None
+class UserRead(ORMReadModel):
+    person_id: UUID
+    address: str | None = None
+    person: PersonRead
