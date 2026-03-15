@@ -23,7 +23,7 @@ class BaseRepository(ABC, Generic[ModelT]):
     async def get(self, pk: Any) -> ModelT | None:
         return await self.session.get(self.model, pk)
 
-    async def list_all(self) -> list[ModelT]:
+    async def list(self) -> list[ModelT]:
         stmt = select(self.model)
         result = await self.session.exec(stmt)
         return list(result.all())

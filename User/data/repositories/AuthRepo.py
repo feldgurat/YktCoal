@@ -1,16 +1,12 @@
 from typing import Optional
 
 from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
 from data.entities.SmsCode import SmsCode
 from data.repositories.BaseRepo import BaseRepository
 
 
 class AuthRepository(BaseRepository[SmsCode]):
     model = SmsCode
-
-    def __init__(self, session: AsyncSession) -> None:
-        super().__init__(session)
     
     async def invalidate_old_sms_codes(self, phone: str) -> None:
         result = await self.session.exec(
@@ -31,8 +27,9 @@ class AuthRepository(BaseRepository[SmsCode]):
         .order_by(SmsCode.created_at.desc())
         )
         last_code = last_code_result.first()
-        if last_code != None:
+        if last_code is not None:
             return last_code
+        return None
         
     async def get_actual_sms_code(self, phone: str) -> Optional[SmsCode]:
         stmt = (
@@ -45,4 +42,4 @@ class AuthRepository(BaseRepository[SmsCode]):
             .limit(1)
         )
         result = await self.session.exec(stmt)
-        return result.scalar_one_or_none()
+        return result.first()
