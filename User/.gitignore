@@ -8,3 +8,5 @@
 */__pycache__/
 /database.db
 /.DS_Store
+/.env
+/*/.DS_Store
