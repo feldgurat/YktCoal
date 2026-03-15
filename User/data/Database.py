@@ -1,12 +1,21 @@
 import os
 from typing import Annotated, AsyncGenerator
+from dotenv import load_dotenv
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 
+load_dotenv()
 
-DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///database.db")
-REDIS_URL: str = os.getenv("REDIS_URL", "redis://default:cCNeFrB1w5a1onpg7eG0WtFae1@yktcoal.feldgurat.ru:6379/0")
+DATABASE_URL: str = os.getenv("DATABASE_URL")
+REDIS_URL: str = os.getenv("REDIS_URL")
+
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set")
+
+if not REDIS_URL:
+    raise RuntimeError("REDIS_URL is not set")
 
 def create_engine(url: str = DATABASE_URL) -> AsyncEngine:
 
