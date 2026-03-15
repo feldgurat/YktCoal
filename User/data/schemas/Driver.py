@@ -8,12 +8,10 @@ class DriverBase(BaseModel):
     license_number: str
 
 
-# POST /persons/{person_id}/driver
 class DriverCreate(DriverBase):
     pass
 
 
-# POST /drivers
 class DriverCreateWithPerson(DriverBase):
     person: PersonCreate
 

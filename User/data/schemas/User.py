@@ -8,12 +8,10 @@ class UserBase(BaseModel):
     address: str | None = None
 
 
-# POST /persons/{person_id}/user
 class UserCreate(UserBase):
     pass
 
 
-# POST /users
 class UserCreateWithPerson(UserBase):
     person: PersonCreate
 
