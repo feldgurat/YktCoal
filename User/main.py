@@ -1,10 +1,12 @@
+import data.entities
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlmodel import select
 import uvicorn
-from data.Database import close_redis, init_db, init_redis
-from api.User import router as user_router
-from api.Auth import router as auth_router
+from data.Database import close_redis, get_session, init_db, init_redis
+from api.v1.User import router as user_router
+from api.v1.Auth import router as auth_router
 
 
 @asynccontextmanager
@@ -18,6 +20,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.include_router(user_router)
 app.include_router(auth_router)
+
+live_router = APIRouter()
+@live_router.get("/")
+def root():
+    return "IM LIVE MOTHAFAKA"
+app.include_router(live_router)
+
 
 origins = [
     "http://localhost:5173",  # адрес Vite-сервера
@@ -35,3 +44,4 @@ app.add_middleware(
 
 if __name__ == "__main__":
     uvicorn.run("main:app", reload=True)
+    session = get_session()
