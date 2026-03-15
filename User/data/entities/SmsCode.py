@@ -1,9 +1,8 @@
 from datetime import datetime
-from sqlmodel import Field
-from data.entities.Base import Base
+from sqlmodel import Field, SQLModel
 
 
-class SmsCode(Base, table=True):
+class SmsCode(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     phone: str = Field(index=True)
     code_hash: str

@@ -1,14 +1,13 @@
 from typing import Optional
 from uuid import UUID
 
-from sqlmodel import Field, Relationship
-from data.entities.Base import Base
+from sqlmodel import Field, Relationship, SQLModel
 from data.entities.Person import Person
 from data.entities.PersonProxyMixin import PersonProxyMixin
 
 
 
-class Driver(PersonProxyMixin, Base, table=True):
+class Driver(PersonProxyMixin, SQLModel, table=True):
     __tablename__ = "drivers"
 
     person_id: UUID = Field(

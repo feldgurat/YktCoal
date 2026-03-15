@@ -1,14 +1,13 @@
 from typing import Optional
 from uuid import UUID, uuid4
 
-from sqlmodel import Field, Relationship
-
-from data.entities.Base import Base
+from sqlmodel import Field, Relationship, SQLModel
 
 
 
 
-class Person(Base, table=True):
+
+class Person(SQLModel, table=True):
     __tablename__ = "persons"
 
     id: UUID = Field(default_factory=uuid4, primary_key=True)
