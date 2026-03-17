@@ -1,7 +1,7 @@
 from uuid import UUID
 from pydantic import BaseModel
 
-from data.schemas.Person import ORMReadModel, PersonCreate, PersonRead, PersonUpdate
+from data.schemas.Person import PersonCreate, PersonRead, PersonUpdate
 
 
 class DriverBase(BaseModel):
@@ -12,16 +12,13 @@ class DriverCreate(DriverBase):
     pass
 
 
-class DriverCreateWithPerson(DriverBase):
-    person: PersonCreate
+class DriverCreateWithPerson(DriverBase, PersonCreate):
+    pass
 
 
-class DriverUpdate(BaseModel):
+class DriverUpdate(PersonUpdate):
     license_number: str | None = None
-    person: PersonUpdate | None = None
 
 
-class DriverRead(ORMReadModel):
-    person_id: UUID
+class DriverRead(PersonRead):
     license_number: str
-    person: PersonRead

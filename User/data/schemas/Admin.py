@@ -8,14 +8,13 @@ class AdminCreate(BaseModel):
     pass
 
 
-class AdminCreateWithPerson(BaseModel):
-    person: PersonCreate
+class AdminCreateWithPerson(PersonCreate):
+    pass
 
 
-class AdminUpdate(BaseModel):
-    person: PersonUpdate | None = None
+class AdminUpdate(PersonUpdate):
+    pass
 
 
-class AdminRead(ORMReadModel):
-    person_id: UUID
-    person: PersonRead
+class AdminRead(PersonRead):
+    pass

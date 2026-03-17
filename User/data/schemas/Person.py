@@ -19,7 +19,6 @@ class PersonUpdate(BaseModel):
     name: str | None = None
     contact_number: str | None = None
     telegram_user_id: str | None = None
-    token_version: int | None = None
 
 
 class PersonRead(ORMReadModel):
@@ -27,4 +26,3 @@ class PersonRead(ORMReadModel):
     name: str
     contact_number: str
     telegram_user_id: str | None = None
-    token_version: int
