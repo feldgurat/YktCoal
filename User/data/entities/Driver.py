@@ -13,6 +13,7 @@ class Driver(PersonProxyMixin, SQLModel, table=True):
     person_id: UUID = Field(
         foreign_key="persons.id",
         primary_key=True,
+        ondelete="CASCADE",
     )
     license_number: str = Field(nullable=False, index=True, unique=True, max_length=64)
 

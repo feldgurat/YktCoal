@@ -20,13 +20,28 @@ class Person(SQLModel, table=True):
     
     user: Optional["User"] = Relationship( # type: ignore
         back_populates="person",
-        sa_relationship_kwargs={"uselist": False},
+        sa_relationship_kwargs={
+            "uselist": False,
+            "cascade": "all, delete-orphan",
+            "single_parent": True,
+            "passive_deletes": True
+            },
     )
     driver: Optional["Driver"] = Relationship( # type: ignore
         back_populates="person",
-        sa_relationship_kwargs={"uselist": False},
+        sa_relationship_kwargs={
+            "uselist": False,
+            "cascade": "all, delete-orphan",
+            "single_parent": True,
+            "passive_deletes": True
+            },
     )
     admin: Optional["Admin"] = Relationship( # type: ignore
         back_populates="person",
-        sa_relationship_kwargs={"uselist": False},
+        sa_relationship_kwargs={
+            "uselist": False,
+            "cascade": "all, delete-orphan",
+            "single_parent": True,
+            "passive_deletes": True
+            },
     )

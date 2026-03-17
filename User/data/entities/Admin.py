@@ -11,6 +11,7 @@ class Admin(PersonProxyMixin, SQLModel, table=True):
     person_id: UUID = Field(
         foreign_key="persons.id",
         primary_key=True,
+        ondelete="CASCADE",
     )
 
     person: Optional["Person"] = Relationship(back_populates="admin")

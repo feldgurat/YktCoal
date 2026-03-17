@@ -11,6 +11,7 @@ class User(PersonProxyMixin, SQLModel, table=True):
     person_id: UUID = Field(
         foreign_key="persons.id",
         primary_key=True,
+        ondelete="CASCADE",
     )
     address: Optional[str] = Field(default=None, max_length=512)
 
