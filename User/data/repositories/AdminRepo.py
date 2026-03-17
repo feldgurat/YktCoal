@@ -23,6 +23,11 @@ class AdminRepository(BaseRepository[Admin]):
         p = await self.get_with_person(person_id)
         return p is not None
     
+    async def list_with_person(self) -> list[Admin]:
+        stmt = select(Admin).options(selectinload(Admin.person))
+        result = await self.session.exec(stmt)
+        return list(result.all())
+    
     async def get_by_contact_number(self, contact_number: str) -> Admin | None:
         stmt = (
             select(Admin)

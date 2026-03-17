@@ -27,6 +27,13 @@ class DriverRepository(BaseRepository[Driver]):
         )
         result = await self.session.exec(stmt)
         return result.first()
+    
+
+    async def list_with_person(self) -> list[Driver]:
+        stmt = select(Driver).options(selectinload(Driver.person))
+        result = await self.session.exec(stmt)
+        return list(result.all())
+    
 
     async def exists_for_person(self, person_id: UUID) -> bool:
         p = await self.get_with_person(person_id)
