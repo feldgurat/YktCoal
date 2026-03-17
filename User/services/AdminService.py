@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 from uuid import UUID
 from fastapi import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -8,7 +8,7 @@ from data.entities.Admin import Admin
 from data.entities.Person import Person
 from data.repositories.AdminRepo import AdminRepository
 from data.repositories.PersonRepo import PersonRepository
-from data.schemas.Admin import AdminCreate, AdminCreateWithPerson, AdminUpdate
+from data.schemas.Admin import AdminCreate, AdminCreateWithPerson, AdminRead, AdminUpdate
 
 
 
@@ -20,11 +20,19 @@ class AdminService:
         self.personsRepo = PersonRepository(session)
         self.adminsRepo = AdminRepository(session)
 
+    def _to_admin_read(self, driver: Admin) -> AdminRead:
+        return AdminRead(
+            id=driver.person_id,
+            name=driver.name,
+            contact_number=driver.contact_number,
+            telegram_user_id=driver.telegram_user_id,
+        )
+
     async def create_for_existing_person(
             self,
             person_id: UUID,
             payload: AdminCreate
-    ) -> Admin:
+    ) -> AdminRead:
         person = await self.personsRepo.get(person_id)
         if person is None:
             raise ValueError("Person с таким id не существует")
@@ -37,12 +45,12 @@ class AdminService:
         await self.session.flush()
         admin = await self.adminsRepo.get_with_person(person_id)
         assert admin is not None
-        return admin
+        return self._to_admin_read(admin)
     
     async def create_full(
             self,
             payload: AdminCreateWithPerson
-    ) -> Admin:
+    ) -> AdminRead:
         admin = Admin(
             person=Person(**payload.person.model_dump())
         )
@@ -59,16 +67,24 @@ class AdminService:
 
         admin = await self.adminsRepo.get_with_person(admin.person_id)
         assert admin is not None
-        return admin
+        return self._to_admin_read(admin)
     
-    async def get(self, person_id: UUID) -> Admin | None:
-        return await self.adminsRepo.get_with_person(person_id)
+    async def get(self, person_id: UUID) -> AdminRead | None:
+        return self._to_admin_read(await self.adminsRepo.get_with_person(person_id))
+    
+    async def get_list(self) -> List[AdminRead]:
+        admins = await self.adminsRepo.list_with_person()
+        resps = [
+            self._to_admin_read(admin)
+            for admin in admins
+        ]
+        return resps
     
     async def update(
             self,
             person_id: UUID,
             payload: AdminUpdate
-    ) -> Admin | None:
+    ) -> AdminRead | None:
         admin = await self.adminsRepo.get_with_person(person_id)
         if admin is None:
             return None
@@ -80,7 +96,7 @@ class AdminService:
                 setattr(admin.person, field, value)
         await self.session.flush()
         admin = await self.adminsRepo.get_with_person(person_id)
-        return admin
+        return self._to_admin_read(admin)
     
     async def delete(self, person_id: UUID) -> bool:
         user = await self.adminsRepo.get_with_person(person_id)

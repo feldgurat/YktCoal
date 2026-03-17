@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, List
 from uuid import UUID
 from fastapi import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -8,7 +8,7 @@ from data.entities.Driver import Driver
 from data.entities.Person import Person
 from data.repositories.DriverRepo import DriverRepository
 from data.repositories.PersonRepo import PersonRepository
-from data.schemas.Driver import DriverCreate, DriverCreateWithPerson, DriverUpdate
+from data.schemas.Driver import DriverCreate, DriverCreateWithPerson, DriverRead, DriverUpdate
 
 
 
@@ -20,11 +20,20 @@ class DriverService:
         self.personsRepo = PersonRepository(session)
         self.driversRepo = DriverRepository(session)
 
+    def _to_driver_read(self, driver: Driver) -> DriverRead:
+        return DriverRead(
+            id=driver.person_id,
+            name=driver.name,
+            contact_number=driver.contact_number,
+            telegram_user_id=driver.telegram_user_id,
+            license_number=driver.license_number,
+        )
+    
     async def create_for_existing_person(
             self,
             person_id: UUID,
             payload: DriverCreate
-    ) -> Driver:
+    ) -> DriverRead:
         person = await self.personsRepo.get(person_id)
         if person is None:
             raise ValueError("Person с таким id не существует")
@@ -38,12 +47,12 @@ class DriverService:
         await self.session.flush()
         driver = await self.driversRepo.get_with_person(person_id)
         assert driver is not None
-        return driver
+        return self._to_driver_read(driver)
     
     async def create_full(
             self,
             payload: DriverCreateWithPerson
-    ) -> Driver:
+    ) -> DriverRead:
         driver = Driver(
             license_number=payload.license_number,
             person=Person(**payload.person.model_dump())
@@ -61,16 +70,24 @@ class DriverService:
 
         driver = await self.driversRepo.get_with_person(driver.person_id)
         assert driver is not None
-        return driver
+        return self._to_driver_read(driver)
     
-    async def get(self, person_id: UUID) -> Driver | None:
-        return await self.driversRepo.get_with_person(person_id)
+    async def get(self, person_id: UUID) -> DriverRead | None:
+        return self._to_driver_read(await self.driversRepo.get_with_person(person_id))
+    
+    async def get_list(self) -> List[DriverRead]:
+        drivers = await self.driversRepo.list_with_person()
+        resps = [
+            self._to_driver_read(driver)
+            for driver in drivers
+        ]
+        return resps
     
     async def update(
             self,
             person_id: UUID,
             payload: DriverUpdate
-    ) -> Driver | None:
+    ) -> DriverRead | None:
         driver = await self.driversRepo.get_with_person(person_id)
         if driver is None:
             return None
@@ -85,7 +102,7 @@ class DriverService:
                 setattr(driver.person, field, value)
         await self.session.flush()
         user = await self.driversRepo.get_with_person(person_id)
-        return user
+        return self._to_driver_read(user)
     
     async def delete(self, person_id: UUID) -> bool:
         user = await self.driversRepo.get_with_person(person_id)

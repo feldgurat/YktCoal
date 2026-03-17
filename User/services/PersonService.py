@@ -1,13 +1,11 @@
-from typing import Annotated
+from typing import Annotated, List
 from uuid import UUID
 from fastapi import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from data.Database import SessionDep
 from data.entities.Person import Person
-from data.entities.User import User
 from data.repositories.PersonRepo import PersonRepository
-from data.repositories.UserRepo import UserRepository
 from data.schemas.Person import PersonCreate, PersonUpdate
 
 
@@ -30,17 +28,21 @@ class PersonService:
         assert person is not None
         return person
     
-    async def get(self, person_id: UUID) -> User | None:
+    async def get(self, person_id: UUID) -> Person | None:
         return await self.personsRepo.get_with_roles(person_id)
     
-    async def get_by_contact_number(self, contact_number: str) -> User | None:
+    async def get_list(self) -> List[Person]:
+        persons = await self.personsRepo.list()
+        return persons
+    
+    async def get_by_contact_number(self, contact_number: str) -> Person | None:
         return await self.personsRepo.get_by_contact_number(contact_number)
     
     async def update(
             self,
             person_id: UUID,
             payload: PersonUpdate
-    ) -> User | None:
+    ) -> Person | None:
         person = await self.personsRepo.get(person_id)
         if person is None:
             return None
