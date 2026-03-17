@@ -6,6 +6,9 @@ from sqlmodel import select
 import uvicorn
 from data.Database import close_redis, get_session, init_db, init_redis
 from api.v1.User import router as user_router
+from api.v1.Person import router as person_router
+from api.v1.Admin import router as admin_router
+from api.v1.Driver import router as driver_router
 from api.v1.Auth import router as auth_router
 
 
@@ -19,6 +22,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(user_router)
+app.include_router(admin_router)
+app.include_router(driver_router)
+app.include_router(person_router)
 app.include_router(auth_router)
 
 live_router = APIRouter()
