@@ -1,14 +1,49 @@
-from typing import Optional
+from typing import List
 from uuid import UUID
 
-from .BaseRepo import BaseRepository
+from sqlmodel import select
+from sqlalchemy.orm import selectinload
+
+from data.entities.Person import Person
 from data.entities.User import User
-from sqlmodel.ext.asyncio.session import AsyncSession
+from data.repositories.BaseRepo import BaseRepository
+
 
 class UserRepository(BaseRepository[User]):
-    def __init__(self):
-        super().__init__(User)
+    model = User
 
-    def get_user_address(self, id: UUID, session: AsyncSession) -> Optional[str]:
-        user = session.get(User, id)
-        return None if user is None else user.address
+    async def get_with_person(self, person_id: UUID) -> User | None:
+        stmt = (
+            select(User)
+            .where(User.person_id == person_id)
+            .options(selectinload(User.person))
+        )
+        result = await self.session.exec(stmt)
+        return result.first()
+
+    async def exists_for_person(self, person_id: UUID) -> bool:
+        p = await self.get_with_person(person_id)
+        return p is not None
+    
+    async def list_with_person(self) -> list[User]:
+        stmt = select(User).options(selectinload(User.person))
+        result = await self.session.exec(stmt)
+        return list(result.all())
+    
+    async def get_by_contact_number(self, contact_number: str) -> User | None:
+        stmt = (
+            select(User)
+            .where(Person.contact_number == contact_number)
+            .options(selectinload(User.person))
+        )
+        result = await self.session.exec(stmt)
+        return result.first()
+    
+    async def get_by_telegram_user_id(self, telegram_user_id: str) -> User | None:
+        stmt = (
+            select(User)
+            .where(User.telegram_user_id == telegram_user_id)
+            .options(selectinload(User.person))
+        )
+        result = await self.session.exec(stmt)
+        return result.first()

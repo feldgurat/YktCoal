@@ -5,14 +5,13 @@ from sqlmodel import Field, Relationship, SQLModel
 from data.entities.Person import Person
 from data.entities.PersonProxyMixin import PersonProxyMixin
 
-class User(PersonProxyMixin, SQLModel, table=True):
-    __tablename__ = "users"
+class Admin(PersonProxyMixin, SQLModel, table=True):
+    __tablename__ = "admins"
 
     person_id: UUID = Field(
         foreign_key="persons.id",
         primary_key=True,
         ondelete="CASCADE",
     )
-    address: Optional[str] = Field(default=None, max_length=512)
 
-    person: Optional["Person"] = Relationship(back_populates="user")
+    person: Optional["Person"] = Relationship(back_populates="admin")

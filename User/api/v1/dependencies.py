@@ -1,23 +1,22 @@
-# api/dependencies.py
-
 from typing import Annotated
 from uuid import UUID
-
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from data.Database import SessionDep
+from data.entities.Admin import Admin
 from data.entities.Person import Person
-from services.AuthService import decode_token, is_token_blacklisted
+from services.AuthService import AuthServiceDep
 from services.Exeptions import InvalidToken, InvalidTokenType, TokenHasExpired
-from services.PersonService import get_person_by_id
+from services.PersonService import PersonServiceDep
+
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
 async def get_current_person(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
-    session: SessionDep,
+    authService: AuthServiceDep,
+    personService: PersonServiceDep
 ) -> Person:
     if credentials is None:
         raise HTTPException(
@@ -29,7 +28,7 @@ async def get_current_person(
     token = credentials.credentials
 
     try:
-        payload = decode_token(token, expected_type="access")
+        payload = authService.decode_token(token, expected_type="access")
     except TokenHasExpired as e:
         raise HTTPException(
             status_code=e.status_code,
@@ -44,7 +43,7 @@ async def get_current_person(
         )
 
     jti = payload["jti"]
-    if await is_token_blacklisted(jti):
+    if await authService.is_token_blacklisted(jti):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Токен отозван",
@@ -55,7 +54,7 @@ async def get_current_person(
     if isinstance(user_id, str):
         user_id = UUID(user_id)
 
-    person = await get_person_by_id(user_id, session)
+    person = await personService.get(user_id)
     if not person:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -77,13 +76,13 @@ async def get_current_person(
 CurrentPersonDep = Annotated[Person, Depends(get_current_person)]
 
 
-async def get_current_admin(current_person: CurrentPersonDep) -> Person:
-    if not current_person.isAdmin:
+async def get_current_admin(current_person: CurrentPersonDep) -> Admin:
+    if current_person.admin is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Недостаточно прав",
         )
-    return current_person
+    return current_person.admin
 
 
 CurrentAdminDep = Annotated[Person, Depends(get_current_admin)]

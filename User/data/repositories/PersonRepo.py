@@ -1,21 +1,35 @@
-from typing import List, Optional
 from uuid import UUID
 
 from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from .BaseRepo import BaseRepository
 from data.entities.Person import Person
+from data.repositories.BaseRepo import BaseRepository
+
 
 
 class PersonRepository(BaseRepository[Person]):
-    def __init__(self):
-        super().__init__(Person)
+    model = Person
 
-    def get_admin_status(self, id: UUID, session: AsyncSession) -> Optional[bool]:
-        person = session.get(Person, id)
-        return None if person is None else person.isAdmin
+    async def get_with_roles(self, person_id: UUID) -> Person | None:
+        stmt = (
+            select(Person)
+            .where(Person.id == person_id)
+            .options(
+                selectinload(Person.user),
+                selectinload(Person.driver),
+                selectinload(Person.admin),
+            )
+        )
+        result = await self.session.exec(stmt)
+        return result.first()
+    
+    async def get_by_telegram_user_id(self, telegram_user_id: str) -> Person | None:
+        stmt = select(Person).where(Person.telegram_user_id == telegram_user_id)
+        result = await self.session.exec(stmt)
+        return result.first()
 
-    def get_admins(self, session: AsyncSession) -> List[Person]:
-        stmt = select(Person).where(Person.isAdmin == True)
-        return list(session.exec(stmt).all())
+    async def get_by_contact_number(self, contact_number: str) -> Person | None:
+        stmt = select(Person).where(Person.contact_number == contact_number)
+        result = await self.session.exec(stmt)
+        return result.first()

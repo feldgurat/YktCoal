@@ -1,51 +1,74 @@
-from typing import List
+from typing import Annotated, List
 from uuid import UUID
-from data.entities.Person import Person
-from data.repositories.PersonRepo import PersonRepository
-from data.schemas.Person import PersonCreate, PersonRead
-from data.schemas.User import UserRead
+from fastapi import Depends
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from data.Database import SessionDep
+from data.entities.Person import Person
+from data.repositories.PersonRepo import PersonRepository
+from data.schemas.Person import PersonCreate, PersonUpdate
 
 
-async def add_new_person(person: PersonCreate, session: AsyncSession) -> UserRead:
-    personRepo = PersonRepository()
-    existingUser = await personRepo.get_entity_by_number(person.contactNumber, session)
-    if existingUser is not None:
-        raise Exception("Person с таким номером уже существует")
+class PersonService:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.personsRepo = PersonRepository(session)
     
-    existingUser = await personRepo.get_entity_by_telegram_user_id(person.telegramUserId, session)
-    if existingUser is not None:
-        raise Exception("Person с таким telegramUserId уже существует")
+    async def create(
+            self,
+            payload: PersonCreate
+    ) -> Person:
+        person = Person(
+            **payload.person.model_dump()
+        )
+        await self.personsRepo.add(person)
+        await self.session.flush()
 
-
-    entity = Person(**person.model_dump())
-
-    try:
-        entity = await personRepo.save_entity(entity, session)
-    except Exception as e:
-        raise e
-
-    return entity
-
-async def get_all_persons(session: AsyncSession) -> List[PersonRead]:
-    personRepo = PersonRepository()
-    try:
-        return await personRepo.get_entities(session)
-    except Exception as e:
-        raise e
+        person = await self.personsRepo.get_by_contact_number(person.contact_number)
+        assert person is not None
+        return person
     
-async def is_user_exist_by_number(phone: str, session: AsyncSession) -> bool:
-    personRepo = PersonRepository()
-    user = await personRepo.get_entity_by_number(phone, session)
-    return user != None
+    async def get(self, person_id: UUID) -> Person | None:
+        return await self.personsRepo.get_with_roles(person_id)
+    
+    async def get_list(self) -> List[Person]:
+        persons = await self.personsRepo.list()
+        return persons
+    
+    async def get_by_contact_number(self, contact_number: str) -> Person | None:
+        return await self.personsRepo.get_by_contact_number(contact_number)
+    
+    async def update(
+            self,
+            person_id: UUID,
+            payload: PersonUpdate
+    ) -> Person | None:
+        person = await self.personsRepo.get(person_id)
+        if person is None:
+            return None
+        data = payload.model_dump(exclude_unset=True)
 
-async def get_person_by_number(phone: str, session: AsyncSession) -> Person:
-    personRepo = PersonRepository()
-    user = await personRepo.get_entity_by_number(phone, session)
-    return user
 
-async def get_person_by_id(id: UUID, session: AsyncSession) -> Person:
-    personRepo = PersonRepository()
-    user = await personRepo.get_entity(id, session)
-    return user
+        for field, value in data.items():
+            setattr(person, field, value)
+
+        await self.session.flush()
+        person = await self.personsRepo.get_with_roles(person_id)
+        return person
+    
+    async def delete(self, person_id: UUID) -> bool:
+        person = await self.personsRepo.get_with_roles(person_id)
+        if person is None:
+            return False
+
+        await self.personsRepo.delete(person)
+        await self.session.flush()
+        return True
+
+
+def get_person_service(
+    session: SessionDep,
+) -> PersonService:
+    return PersonService(session)
+    
+PersonServiceDep = Annotated[PersonService, Depends(get_person_service)]
