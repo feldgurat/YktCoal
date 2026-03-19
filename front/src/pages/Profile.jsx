@@ -10,9 +10,7 @@ function Profile() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // Запрос к эндпоинту, который возвращает данные текущего пользователя
-        // Замените '/persons/me' на реальный путь вашего бэкенда
-        const response = await api.get('/persons');
+        const response = await api.get('/api/my_profile');
         setUser(response.data);
         console.log(response.data);
       } catch (err) {
@@ -51,7 +49,6 @@ function Profile() {
         <p><span className="font-semibold">Имя:</span> {user?.name}</p>
         <p><span className="font-semibold">Телефон:</span> {user?.contactNumber}</p>
         <p><span className="font-semibold">Telegram ID:</span> {user?.telegramUserId}</p>
-        <p><span className="font-semibold">Администратор:</span> {user?.isAdmin ? 'Да' : 'Нет'}</p>
       </div>
     </div>
   );

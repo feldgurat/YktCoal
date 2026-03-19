@@ -14,7 +14,7 @@ function CodeForm({ phone, expectedCode, onLogin }) {
 
         try {
             const response = await api.post('/auth/sign-in-code-answer', { phone, code });
-console.log('Ответ при входе:', response.data); // посмотрите, есть ли там user
+            console.log('Ответ при входе:', response.data); // посмотрите, есть ли там user
             onLogin(response.data);
             } 
         catch (err) {

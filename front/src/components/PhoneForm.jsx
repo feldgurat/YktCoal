@@ -15,7 +15,6 @@ function PhoneForm({ onCodeSent }) {
 
         try {
             const response = await api.post('/auth/sign-in-code-request', { phone });
-    // Добавляем исходный номер в объект, который передаём в onCodeSent
         onCodeSent({ 
         ...response.data,   // то, что вернул бэкенд (может быть code, session_id и т.д.)
         userPhone: phone    // исходный номер, который ввёл пользователь
