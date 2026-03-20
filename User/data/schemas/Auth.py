@@ -20,3 +20,7 @@ class TokenPair(BaseModel):
 
 class RefreshIn(BaseModel):
     refresh_token: str
+
+class RegisterAnswer(BaseModel):
+    success: bool
+    status: str

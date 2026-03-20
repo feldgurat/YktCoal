@@ -4,6 +4,7 @@ from sqlmodel import select
 from sqlalchemy.orm import selectinload
 
 from data.entities.Admin import Admin
+from data.entities.Person import Person
 from data.repositories.BaseRepo import BaseRepository
 
 
@@ -31,6 +32,7 @@ class AdminRepository(BaseRepository[Admin]):
     async def get_by_contact_number(self, contact_number: str) -> Admin | None:
         stmt = (
             select(Admin)
+            .join(Person, Person.id == Admin.person_id)
             .where(Admin.contact_number == contact_number)
             .options(selectinload(Admin.person))
         )
@@ -40,6 +42,7 @@ class AdminRepository(BaseRepository[Admin]):
     async def get_by_telegram_user_id(self, telegram_user_id: str) -> Admin | None:
         stmt = (
             select(Admin)
+            .join(Person, Person.id == Admin.person_id)
             .where(Admin.telegram_user_id == telegram_user_id)
             .options(selectinload(Admin.person))
         )

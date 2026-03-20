@@ -3,11 +3,17 @@ import uuid
 
 from fastapi import APIRouter, HTTPException, status
 
-from api.routes import ANSWER_SIGN_IN_SMS_CODE, API_V1_PREFIX, AUTH, REFRESH, SEND_SIGN_IN_SMS_CODE
-from data.schemas.Auth import RefreshIn, SmsCodeRequestAnswer, SmsRequestIn, SmsVerifyIn, TokenPair
+from api.routes import ANSWER_SIGN_IN_SMS_CODE, API_V1_PREFIX, AUTH, REFRESH, REGISTER, SEND_SIGN_IN_SMS_CODE
+from data.entities.Person import Person
+from data.schemas.Auth import RefreshIn, RegisterAnswer, SmsCodeRequestAnswer, SmsRequestIn, SmsVerifyIn, TokenPair
+from data.schemas.Person import PersonCreate
+from data.schemas.User import UserCreateWithPerson
+from services.AdminService import AdminServiceDep
 from services.AuthService import OTP_TTL_SECONDS, AuthServiceDep
+from services.DriverService import DriverServiceDep
 from services.Exeptions import InvalidToken, InvalidTokenType, OtpRateLimitError, TokenHasExpired
 from services.PersonService import PersonServiceDep
+from services.UserService import UserServiceDep
 
 
 
@@ -150,8 +156,70 @@ async def refresh_tokens(
 
     access_token = authService.create_access_token(str(user.id), user.token_version)
     refresh_token = authService.create_refresh_token(str(user.id), user.token_version)
-
+    #Надо добавить инкремент версии токена
     return TokenPair(
         access_token=access_token,
         refresh_token=refresh_token,
     )
+
+
+@router.post(REGISTER, response_model=RegisterAnswer, status_code=status.HTTP_201_CREATED)
+async def register(
+    data: PersonCreate,
+    authService: AuthServiceDep,
+    personService: PersonServiceDep,
+):
+    try:
+        phone = authService.normalize_phone(data.contact_number)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    existing_person = await personService.get_by_contact_number(phone)
+    if existing_person is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Person с таким номером уже существует",
+        )
+    
+    try:
+        new_person = PersonCreate(
+            name=data.name,
+            contact_number=phone,
+            telegram_user_id=data.telegram_user_id
+        )
+
+        new_person = await personService.create(new_person)
+        await personService.session.commit()
+
+        try:
+            await authService.resending_prot(phone)
+        except Exception as e:
+            if isinstance(e, OtpRateLimitError):
+                raise HTTPException(status_code=429, detail="Попробуйте запросить код чуть позже")
+            raise
+        
+
+        code = authService.generate_code()
+        code_hash = authService.hash_code(phone, code)
+        expires_at = datetime.utcnow() + timedelta(seconds=int(OTP_TTL_SECONDS))
+
+        text = f"Ваш код подтверждения: {code}"
+
+        # await send_sms_via_exolve(destination=phone, text=text)
+
+        await authService.invalide_old_codes(phone)
+
+        await authService.add_new_sms_code(phone, code_hash, expires_at)
+        await authService.session.commit()
+
+        return RegisterAnswer(
+            success=True,
+            status=f"Person создан. Код отпарвлен. {code}"
+        )
+
+    except ValueError as e:
+        await personService.session.rollback()
+        raise HTTPException(status_code=409, detail=str(e))
+    except Exception as e:
+        await personService.session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

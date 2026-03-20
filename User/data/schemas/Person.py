@@ -26,3 +26,4 @@ class PersonRead(ORMReadModel):
     name: str
     contact_number: str
     telegram_user_id: str | None = None
+    token_version: int

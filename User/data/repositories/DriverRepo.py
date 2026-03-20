@@ -4,6 +4,7 @@ from sqlmodel import select
 from sqlalchemy.orm import selectinload
 
 from data.entities.Driver import Driver
+from data.entities.Person import Person
 from data.repositories.BaseRepo import BaseRepository
 
 
@@ -42,6 +43,7 @@ class DriverRepository(BaseRepository[Driver]):
     async def get_by_contact_number(self, contact_number: str) -> Driver | None:
         stmt = (
             select(Driver)
+            .join(Person, Person.id == Driver.person_id)
             .where(Driver.contact_number == contact_number)
             .options(selectinload(Driver.person))
         )
@@ -51,6 +53,7 @@ class DriverRepository(BaseRepository[Driver]):
     async def get_by_telegram_user_id(self, telegram_user_id: str) -> Driver | None:
         stmt = (
             select(Driver)
+            .join(Person, Person.id == Driver.person_id)
             .where(Driver.telegram_user_id == telegram_user_id)
             .options(selectinload(Driver.person))
         )

@@ -27,6 +27,7 @@ class UserService:
             contact_number=user.contact_number,
             telegram_user_id=user.telegram_user_id,
             address=user.address,
+            token_version=user.token_version
         )
 
     async def create_for_existing_person(

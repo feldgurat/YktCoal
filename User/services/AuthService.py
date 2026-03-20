@@ -166,7 +166,7 @@ class AuthService:
 
     async def resending_prot(self, phone: str):
         last_code = await self.authRepo.get_last_code_result(phone)
-        if last_code and (datetime.utcnow() - last_code.SmsCode.created_at).seconds < 60:
+        if last_code and (datetime.utcnow() - last_code.created_at).seconds < 60:
             raise OtpRateLimitError("Попробуйте запросить код чуть позже")
         
     async def get_actual_sms_code(self, phone: str):
@@ -191,6 +191,9 @@ class AuthService:
 
         key = self._blacklist_key(jti)
         await get_redis().set(key, "1", exat=exp_ts)
+
+
+
 
 
 def get_auth_service(
