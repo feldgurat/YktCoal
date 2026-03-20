@@ -13,4 +13,6 @@ SEND_SIGN_IN_SMS_CODE = "/sign-in-code-request"
 ANSWER_SIGN_IN_SMS_CODE = "/sign-in-code-answer"
 REFRESH = "/refresh"
 
+REGISTER = "/register"
+
 USERS = "/users"

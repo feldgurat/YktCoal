@@ -33,6 +33,7 @@ class UserRepository(BaseRepository[User]):
     async def get_by_contact_number(self, contact_number: str) -> User | None:
         stmt = (
             select(User)
+            .join(Person, Person.id == User.person_id)
             .where(Person.contact_number == contact_number)
             .options(selectinload(User.person))
         )
@@ -42,6 +43,7 @@ class UserRepository(BaseRepository[User]):
     async def get_by_telegram_user_id(self, telegram_user_id: str) -> User | None:
         stmt = (
             select(User)
+            .join(Person, Person.id == User.person_id)
             .where(User.telegram_user_id == telegram_user_id)
             .options(selectinload(User.person))
         )

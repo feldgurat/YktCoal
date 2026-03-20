@@ -1,9 +1,9 @@
 from typing import List
 from uuid import UUID
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.routes import API_V1_PREFIX, PERSONS
-from api.v1.dependencies import CurrentPersonDep
+from api.v1.dependencies import CurrentPersonDep, get_current_person
 from data.schemas.Common import DeleteResponse
 from data.schemas.Person import PersonCreate, PersonRead, PersonUpdate
 from services.PersonService import PersonServiceDep
@@ -11,7 +11,7 @@ from services.PersonService import PersonServiceDep
 
 router = APIRouter(
     prefix=f"{API_V1_PREFIX}{PERSONS}", tags=["Persons"],
-    #dependencies=[Depends(get_current_person)]
+    dependencies=[Depends(get_current_person)]
 )
 
 
@@ -50,15 +50,15 @@ async def get_person(id: UUID, personService: PersonServiceDep):
     return person
 
 
-@router.get("/my_profile", response_model=PersonRead)
-async def get_my_profile(personService: PersonServiceDep, current_person: CurrentPersonDep):
-    person = await personService.get(current_person.id)
-    if person is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="person not found",
-        )
-    return person
+# @router.get("/my_profile", response_model=PersonRead)
+# async def get_my_profile(personService: PersonServiceDep, current_person: CurrentPersonDep):
+#     person = await personService.get(current_person.id)
+#     if person is None:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Person not found",
+#         )
+#     return person
 
 @router.patch("", response_model=PersonRead)
 async def edit_person(id: UUID, person: PersonUpdate, personService: PersonServiceDep):

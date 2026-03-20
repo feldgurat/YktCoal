@@ -85,4 +85,4 @@ async def get_current_admin(current_person: CurrentPersonDep) -> Admin:
     return current_person.admin
 
 
-CurrentAdminDep = Annotated[Person, Depends(get_current_admin)]
+CurrentAdminDep = Annotated[Admin, Depends(get_current_admin)]

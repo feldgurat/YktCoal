@@ -1,17 +1,17 @@
 from typing import List
 from uuid import UUID
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from api.routes import API_V1_PREFIX, DRIVERS
-from api.v1.dependencies import CurrentPersonDep
+from api.v1.dependencies import CurrentAdminDep, CurrentPersonDep, get_current_person
 from data.schemas.Common import DeleteResponse
-from data.schemas.Driver import DriverCreateWithPerson, DriverRead, DriverUpdate
+from data.schemas.Driver import DriverCreate, DriverCreateWithPerson, DriverRead, DriverUpdate
 from services.DriverService import DriverServiceDep
 
 
 router = APIRouter(
     prefix=f"{API_V1_PREFIX}{DRIVERS}", tags=["Drivers"],
-    #dependencies=[Depends(get_current_person)]
+    dependencies=[Depends(get_current_person)]
 )
 
 
@@ -56,8 +56,17 @@ async def get_my_profile(driverService: DriverServiceDep, current_person: Curren
     if driver is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            detail="Driver not found",
         )
+    return driver
+
+@router.post("/add_role", response_model=DriverRead)
+async def add_driver_role(payload: DriverCreate, driverService: DriverServiceDep, current_person: CurrentAdminDep):
+    try:
+        driver = await driverService.create_for_existing_person(current_person.id, payload)
+        driverService.session.commit()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return driver
 
 @router.patch("", response_model=DriverRead)

@@ -5,13 +5,13 @@ from api.routes import API_V1_PREFIX, USERS
 from api.v1.dependencies import CurrentPersonDep, get_current_person
 from data.Database import SessionDep
 from data.schemas.Common import DeleteResponse
-from data.schemas.User import UserCreateWithPerson, UserRead, UserUpdate
+from data.schemas.User import UserCreate, UserCreateWithPerson, UserRead, UserUpdate
 from services.UserService import UserServiceDep
 
 
 router = APIRouter(
     prefix=f"{API_V1_PREFIX}{USERS}", tags=["Users"],
-    #dependencies=[Depends(get_current_person)]
+    dependencies=[Depends(get_current_person)]
 )
 
 
@@ -58,6 +58,15 @@ async def get_my_profile(userService: UserServiceDep, current_person: CurrentPer
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
         )
+    return user
+
+@router.post("/add_role", response_model=UserRead)
+async def add_user_role(payload: UserCreate, userService: UserServiceDep, current_person: CurrentPersonDep):
+    try:
+        user = await userService.create_for_existing_person(current_person.id, payload)
+        userService.session.commit()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return user
 
 @router.patch("", response_model=UserRead)

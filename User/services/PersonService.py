@@ -19,7 +19,7 @@ class PersonService:
             payload: PersonCreate
     ) -> Person:
         person = Person(
-            **payload.person.model_dump()
+            **payload.model_dump()
         )
         await self.personsRepo.add(person)
         await self.session.flush()
