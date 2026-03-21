@@ -78,6 +78,9 @@ class UserService:
         user =  await self.usersRepo.get_with_person(person_id)
         return self._to_user_read(user)
     
+    async def get_by_contact_number(self, contact_number: str) -> UserRead | None:
+        return await self.usersRepo.get_by_contact_number(contact_number)
+    
     async def get_list(self) -> List[UserRead]:
         users = await self.usersRepo.list_with_person()
         resps = [

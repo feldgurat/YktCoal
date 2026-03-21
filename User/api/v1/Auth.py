@@ -165,31 +165,32 @@ async def refresh_tokens(
 
 @router.post(REGISTER, response_model=RegisterAnswer, status_code=status.HTTP_201_CREATED)
 async def register(
-    data: PersonCreate,
+    data: UserCreateWithPerson,
     authService: AuthServiceDep,
-    personService: PersonServiceDep,
+    userService: UserServiceDep,
 ):
     try:
         phone = authService.normalize_phone(data.contact_number)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    existing_person = await personService.get_by_contact_number(phone)
-    if existing_person is not None:
+    existing_user = await userService.get_by_contact_number(phone)
+    if existing_user is not None:
         raise HTTPException(
             status_code=409,
-            detail="Person с таким номером уже существует",
+            detail="User с таким номером уже существует",
         )
     
     try:
-        new_person = PersonCreate(
+        user = UserCreateWithPerson(
             name=data.name,
             contact_number=phone,
-            telegram_user_id=data.telegram_user_id
+            telegram_user_id=data.telegram_user_id,
+            address=data.address
         )
 
-        new_person = await personService.create(new_person)
-        await personService.session.commit()
+        user = await userService.create_full(user)
+        await userService.session.commit()
 
         try:
             await authService.resending_prot(phone)
@@ -214,12 +215,12 @@ async def register(
 
         return RegisterAnswer(
             success=True,
-            status=f"Person создан. Код отпарвлен. {code}"
+            status=f"User создан. Код отпарвлен. {code}"
         )
 
     except ValueError as e:
-        await personService.session.rollback()
+        await userService.session.rollback()
         raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
-        await personService.session.rollback()
+        await userService.session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
