@@ -60,11 +60,11 @@ async def get_my_profile(driverService: AdminServiceDep, current_person: Current
         )
     return driver
 
-@router.post("/add_role", response_model=AdminRead)
-async def add_admin_role(payload: AdminCreate, adminService: AdminServiceDep, current_person: CurrentAdminDep):
+@router.post("/add_role/{id}", response_model=AdminRead)
+async def add_admin_role(id: UUID, payload: AdminCreate, adminService: AdminServiceDep, current_person: CurrentAdminDep):
     try:
-        admin = await adminService.create_for_existing_person(current_person.id, payload)
-        adminService.session.commit()
+        admin = await adminService.create_for_existing_person(id, payload)
+        await adminService.session.commit()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     return admin

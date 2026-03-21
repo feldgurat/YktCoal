@@ -64,7 +64,7 @@ async def get_my_profile(userService: UserServiceDep, current_person: CurrentPer
 async def add_user_role(payload: UserCreate, userService: UserServiceDep, current_person: CurrentPersonDep):
     try:
         user = await userService.create_for_existing_person(current_person.id, payload)
-        userService.session.commit()
+        await userService.session.commit()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     return user
