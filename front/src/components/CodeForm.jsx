@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import api from '../api';
 import { Link } from 'react-router-dom';
+import { AUTH } from '../api/endpoints'
 
 function CodeForm({ phone, expectedCode, onLogin }) {
     const [code, setCode] = useState('');
@@ -13,7 +14,7 @@ function CodeForm({ phone, expectedCode, onLogin }) {
         setError('');
 
         try {
-            const response = await api.post('/auth/sign-in-code-answer', { phone, code });
+            const response = await api.post(AUTH.VERIFY_CODE, { phone, code });
             console.log('Ответ при входе:', response.data); // посмотрите, есть ли там user
             onLogin(response.data);
             } 

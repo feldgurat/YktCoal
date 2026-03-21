@@ -1,7 +1,8 @@
 // components/PhoneForm.jsx
 import { useState } from 'react';
 import api from '../api';
-import { Link } from "react-router-dom"
+import { Link } from "react-router-dom";
+import { AUTH } from '../api/endpoints'
 
 function PhoneForm({ onCodeSent }) {
     const [phone, setPhone] = useState('');
@@ -14,7 +15,7 @@ function PhoneForm({ onCodeSent }) {
         setError('');
 
         try {
-            const response = await api.post('/auth/sign-in-code-request', { phone });
+            const response = await api.post(AUTH.SEND_CODE, { phone });
         onCodeSent({ 
         ...response.data,   // то, что вернул бэкенд (может быть code, session_id и т.д.)
         userPhone: phone    // исходный номер, который ввёл пользователь
