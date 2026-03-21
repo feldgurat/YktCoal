@@ -12,7 +12,7 @@ class UserCreate(UserBase):
     pass
 
 
-class UserCreateWithPerson(UserBase, PersonCreate):
+class UserCreateWithPerson(UserCreate, PersonCreate):
     pass
 
 

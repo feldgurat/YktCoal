@@ -16,3 +16,5 @@ REFRESH = "/refresh"
 REGISTER = "/register"
 
 USERS = "/users"
+
+TELEGRAM = "/telegram"

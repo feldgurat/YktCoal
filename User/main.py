@@ -10,6 +10,7 @@ from api.v1.Person import router as person_router
 from api.v1.Admin import router as admin_router
 from api.v1.Driver import router as driver_router
 from api.v1.Auth import router as auth_router
+from api.v1.Telegram import router as telegram_router
 
 
 @asynccontextmanager
@@ -26,6 +27,7 @@ app.include_router(admin_router)
 app.include_router(driver_router)
 app.include_router(person_router)
 app.include_router(auth_router)
+app.include_router(telegram_router)
 
 live_router = APIRouter()
 @live_router.get("/")
