@@ -60,11 +60,11 @@ async def get_my_profile(driverService: DriverServiceDep, current_person: Curren
         )
     return driver
 
-@router.post("/add_role", response_model=DriverRead)
-async def add_driver_role(payload: DriverCreate, driverService: DriverServiceDep, current_person: CurrentAdminDep):
+@router.post("/add_role/{id}", response_model=DriverRead)
+async def add_driver_role(id: UUID, payload: DriverCreate, driverService: DriverServiceDep, current_person: CurrentAdminDep):
     try:
-        driver = await driverService.create_for_existing_person(current_person.id, payload)
-        driverService.session.commit()
+        driver = await driverService.create_for_existing_person(id, payload)
+        await driverService.session.commit()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     return driver
