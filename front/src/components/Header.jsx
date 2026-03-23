@@ -15,10 +15,10 @@ export const Header = () => {
           {/* Right: Navigation */}
           <nav className="flex gap-8">
             <a href="#" className="font-montserrat font-semibold text-lg text-black hover:underline underline-offset-4">
-              Мои заявки
+              <Link to="/requests">Мои заявки</Link>
             </a>
             <a href="#" className="font-montserrat font-semibold text-lg text-black hover:underline underline-offset-4">
-              Мои заказы
+              <Link to="/orders">Мои заказы</Link>
             </a>
             <a href="#" className="font-montserrat font-semibold text-lg text-black hover:underline underline-offset-4тз">
               <Link to="/profile">Профиль</Link>
