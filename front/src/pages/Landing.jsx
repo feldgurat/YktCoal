@@ -18,7 +18,7 @@ export const Landing = () => {
               <a href="#" className="hover:underline underline-offset-6 font-montserrat text-[20px] font-bold text-white">
                 Перейти в ТГ-бота
               </a>
-              <Link to="/Login" className="hover:underline underline-offset-6 font-montserrat text-[20px] font-bold text-white">
+              <Link to="/register" className="hover:underline underline-offset-6 font-montserrat text-[20px] font-bold text-white">
                 Войти в систему
               </Link>
             </nav>
