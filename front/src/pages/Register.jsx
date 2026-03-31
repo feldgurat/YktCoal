@@ -12,7 +12,6 @@ function Register() {
     const handleCodeSent = (data) => {
         setPhone(data.userPhone);
         setCode(data.status);
-        console.log(data);
         setStep('code');
     };
 
