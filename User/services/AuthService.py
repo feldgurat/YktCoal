@@ -1,204 +1,206 @@
-from datetime import datetime, timedelta, timezone
-import os
-import re
-from typing import Annotated
-from fastapi import Depends
-import jwt
-import hmac
 import hashlib
+import re
 import secrets
-from uuid import uuid4
-from data.Database import SessionDep, get_redis
-from data.entities.SmsCode import SmsCode
-import httpx
-from sqlmodel.ext.asyncio.session import AsyncSession
-from data.repositories.AuthRepo import AuthRepository
-from services.Exeptions import InvalidToken, InvalidTokenType, OtpRateLimitError, SmsProviderInternalError, SmsProviderResponseError, SmsProviderTimeoutError, TokenHasExpired
+import uuid
+from datetime import datetime, timedelta, timezone
+from typing import Annotated, Any
 
-SMS_API_URL = os.getenv("SMS_API_URL")
-SMS_API_KEY = os.getenv("SMS_API_KEY")
-SMS_OTP_SECRET = os.getenv("SMS_OTP_SECRET")
-OTP_TTL_SECONDS = os.getenv("OTP_TTL_SECONDS")
-OTP_MAX_ATTEMPTS = os.getenv("OTP_MAX_ATTEMPTS")
-SMS_SOURCE = os.getenv("SMS_SOURCE")
+import jwt
+from fastapi import Depends
 
-
-JWT_BLACKLIST_PREFIX = os.getenv("JWT_BLACKLIST_PREFIX")
-SECRET_JWT_KEY = os.getenv("SECRET_JWT_KEY")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
-ACCESS_TOKEN_EXPIRE_MINUTES = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
-REFRESH_TOKEN_EXPIRE_DAYS = os.getenv("REFRESH_TOKEN_EXPIRE_DAYS")
+from config import settings
+from data.entities.Role import Role
+from data.entities.User import User
+from data.repositories.AuthRepo import AuthRepository, AuthRepositoryDep
+from data.repositories.UserRepo import UserRepository, UserRepositoryDep
+from data.schemas.Auth import RegisterIn
+from services.Exeptions import (
+    InvalidTokenError,
+    InvalidTokenTypeError,
+    OtpInvalidError,
+    OtpRateLimitError,
+    TokenExpiredError,
+    TokenRevokedError,
+    UserAlreadyExistsError,
+    UserNotFoundError,
+)
 
 
 class AuthService:
-    def __init__(self, session: AsyncSession):
-        self.session = session
-        self.authRepo = AuthRepository(session)
+    def __init__(self, auth_repo: AuthRepository, user_repo: UserRepository) -> None:
+        self._auth_repo = auth_repo
+        self._user_repo = user_repo
 
-    def create_access_token(self, user_id: str, version: int) -> str:
+    # ── Phone ──────────────────────────────────────────────────
+
+    @staticmethod
+    def normalize_phone(raw: str) -> str:
+        digits = re.sub(r"\D", "", raw)
+        if digits.startswith("8") and len(digits) == 11:
+            digits = "7" + digits[1:]
+        if not digits.startswith("7") or len(digits) != 11:
+            raise ValueError("Некорректный номер телефона")
+        return f"+{digits}"
+
+    # ── OTP ────────────────────────────────────────────────────
+
+    @staticmethod
+    def generate_code() -> str:
+        upper = 10 ** settings.OTP_CODE_LENGTH - 1
+        return str(secrets.randbelow(upper)).zfill(settings.OTP_CODE_LENGTH)
+
+    @staticmethod
+    def hash_code(phone: str, code: str) -> str:
+        return hashlib.sha256(f"{phone}:{code}".encode()).hexdigest()
+
+    async def send_otp(self, phone: str) -> str:
+        if await self._auth_repo.is_rate_limited(phone):
+            raise OtpRateLimitError()
+
+        code = self.generate_code()
+        code_hash = self.hash_code(phone, code)
+
+        await self._auth_repo.save_otp(phone, code_hash)
+        await self._auth_repo.set_rate_limit(phone)
+
+        # TODO: await send_sms_via_exolve(destination=phone, text=f"Код: {code}")
+        return code
+
+    async def verify_otp(self, phone: str, code: str) -> None:
+        stored_hash = await self._auth_repo.get_otp(phone)
+        if stored_hash is None:
+            raise OtpInvalidError("Код не найден или истёк")
+
+        if stored_hash != self.hash_code(phone, code):
+            raise OtpInvalidError()
+
+        await self._auth_repo.delete_otp(phone)
+
+    # ── JWT ────────────────────────────────────────────────────
+
+    def create_access_token(self, user_id: str, token_version: int) -> str:
         now = datetime.now(timezone.utc)
         payload = {
             "sub": user_id,
             "type": "access",
+            "ver": token_version,
+            "jti": str(uuid.uuid4()),
             "iat": now,
-            "exp": now + timedelta(minutes=int(ACCESS_TOKEN_EXPIRE_MINUTES)),
-            "jti": str(uuid4()),
-            "ver": version,
+            "exp": now + timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES),
         }
-        return jwt.encode(payload, SECRET_JWT_KEY, algorithm=JWT_ALGORITHM)
+        return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
-
-    def create_refresh_token(self, user_id: str, version: int) -> str:
+    def create_refresh_token(self, user_id: str, token_version: int) -> str:
         now = datetime.now(timezone.utc)
         payload = {
             "sub": user_id,
             "type": "refresh",
+            "ver": token_version,
+            "jti": str(uuid.uuid4()),
             "iat": now,
-            "exp": now + timedelta(days=int(REFRESH_TOKEN_EXPIRE_DAYS)),
-            "jti": str(uuid4()),
-            "ver": version,
+            "exp": now + timedelta(days=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS),
         }
-        return jwt.encode(payload, SECRET_JWT_KEY, algorithm=JWT_ALGORITHM)
+        return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
-    def decode_token(self, token: str, expected_type: str) -> dict:
+    def decode_token(self, token: str, expected_type: str) -> dict[str, Any]:
         try:
             payload = jwt.decode(
-                token,
-                SECRET_JWT_KEY,
-                algorithms=[JWT_ALGORITHM],
-                options={"require": ["sub", "type", "exp", "iat", "jti"]},
+                token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
             )
         except jwt.ExpiredSignatureError:
-            raise TokenHasExpired(status_code=401, message="Токен истёк")
+            raise TokenExpiredError()
         except jwt.InvalidTokenError:
-            raise InvalidToken(status_code=401, message="Некорректный токен")
+            raise InvalidTokenError()
 
         if payload.get("type") != expected_type:
-            raise InvalidTokenType(status_code=401, message="Неверный тип токена")
+            raise InvalidTokenTypeError()
 
         return payload
 
-    def normalize_phone(self, phone: str) -> str:
-        phone = phone.strip()
-
-        if not phone:
-            raise ValueError("Некорректный номер телефона")
-
-        # Разрешаем только цифры и обычные разделители
-        if re.search(r"[^\d\s()+\-]", phone):
-            raise ValueError("Некорректный номер телефона")
-
-        # "+" может быть только в начале и только один
-        if phone.count("+") > 1 or ("+" in phone and not phone.startswith("+")):
-            raise ValueError("Некорректный номер телефона")
-
-        digits = re.sub(r"\D", "", phone)
-
-        # 10 цифр -> считаем, что это российский номер без 7/8
-        if len(digits) == 10:
-            digits = "7" + digits
-
-        # 11 цифр с 8 или 7 -> приводим к формату 7XXXXXXXXXX   
-        elif len(digits) == 11 and digits[0] in ("7", "8"):
-            digits = "7" + digits[1:]
-
-        else:
-            raise ValueError("Некорректный номер телефона")
-
-        return digits
-
-
-    def generate_code(self) -> str:
-        return str(secrets.randbelow(900000) + 100000)  # 6 цифр
-
-
-    def hash_code(self, phone: str, code: str) -> str:
-        raw = f"{phone}:{code}".encode()
-        return hmac.new(SMS_OTP_SECRET.encode(), raw, hashlib.sha256).hexdigest()
-
-
-
-
-    async def send_sms(destination: str, text: str) -> dict:
-        payload = {
-            "number": SMS_SOURCE,
-            "text": text,
-            "destination": destination,
-        }
-
-        headers = {
-            "Authorization": f"Bearer {SMS_API_KEY}",
-            "Content-Type": "application/json",
-        }
-
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    SMS_API_URL,
-                    json=payload,
-                    headers=headers,
-                    timeout=10.0,
-                )
-                response.raise_for_status()
-                return response.json()
-
-            except httpx.TimeoutException:
-                raise SmsProviderTimeoutError(status_code=504, detail="SMS провайдер не ответил вовремя")
-            except httpx.HTTPStatusError as e:
-                raise SmsProviderResponseError(
-                    status_code=e.response.status_code,
-                    detail=f"Ошибка SMS провайдера: {e.response.text}",
-                )
-            except Exception as e:
-                raise SmsProviderInternalError(status_code=500, detail=f"Внутренняя ошибка: {str(e)}")
-            
-    async def invalide_old_codes(self, phone: str):
-        self.authRepo.invalidate_old_sms_codes(phone)
-
-    async def add_new_sms_code(self, phone: str, code_hash: str, expires_at: datetime):
-        otp = SmsCode(
-            phone=phone,
-            code_hash=code_hash,
-            expires_at=expires_at,
+    def create_token_pair(self, user_id: str, token_version: int) -> tuple[str, str]:
+        return (
+            self.create_access_token(user_id, token_version),
+            self.create_refresh_token(user_id, token_version),
         )
-        await self.authRepo.add(otp)
 
+    # ── Token blacklist ────────────────────────────────────────
 
-    async def resending_prot(self, phone: str):
-        last_code = await self.authRepo.get_last_code_result(phone)
-        if last_code and (datetime.utcnow() - last_code.created_at).seconds < 60:
-            raise OtpRateLimitError("Попробуйте запросить код чуть позже")
-        
-    async def get_actual_sms_code(self, phone: str):
-        last_code = await self.authRepo.get_actual_sms_code(phone)
-        return last_code
+    async def is_token_revoked(self, jti: str) -> bool:
+        return await self._auth_repo.is_token_blacklisted(jti)
 
+    async def revoke_token(self, jti: str, exp_ts: int) -> None:
+        now_ts = int(datetime.now(timezone.utc).timestamp())
+        ttl = max(exp_ts - now_ts, 1)
+        await self._auth_repo.blacklist_token(jti, ttl)
 
-    def _blacklist_key(self, jti: str) -> str:
-        return f"{JWT_BLACKLIST_PREFIX}:{jti}"
+    # ── High-level flows ───────────────────────────────────────
 
-    async def is_token_blacklisted(self, jti: str) -> bool:
-        key = self._blacklist_key(jti)
-        return bool(await get_redis().exists(key))
+    async def request_sign_in_code(self, raw_phone: str) -> str:
+        phone = self.normalize_phone(raw_phone)
+        user = await self._user_repo.get_by_contact_number(phone)
+        if user is None:
+            raise UserNotFoundError("Пользователя с таким номером нет в системе")
+        return await self.send_otp(phone)
 
+    async def verify_sign_in_code(
+        self, raw_phone: str, code: str
+    ) -> tuple[User, str, str]:
+        phone = self.normalize_phone(raw_phone)
+        user = await self._user_repo.get_by_contact_number(phone)
+        if user is None:
+            raise UserNotFoundError()
 
-    async def add_token_to_blacklist(self, jti: str, exp_ts: int) -> None:
-        from time import time
+        await self.verify_otp(phone, code)
 
-        now_ts = int(time())
-        if exp_ts <= now_ts:
-            return
+        access, refresh = self.create_token_pair(str(user.id), user.token_version)
+        return user, access, refresh
 
-        key = self._blacklist_key(jti)
-        await get_redis().set(key, "1", exat=exp_ts)
+    async def refresh_tokens(self, raw_refresh_token: str) -> tuple[str, str]:
+        payload = self.decode_token(raw_refresh_token, expected_type="refresh")
 
+        jti = payload["jti"]
+        user_id = payload["sub"]
+        token_version = payload.get("ver")
 
+        if await self.is_token_revoked(jti):
+            raise TokenRevokedError()
 
+        user = await self._user_repo.get_by_id(user_id)
+        if user is None:
+            raise UserNotFoundError()
+
+        if token_version != user.token_version:
+            raise InvalidTokenError("Токен устарел")
+
+        await self.revoke_token(jti, payload["exp"])
+        user.token_version += 1
+
+        return self.create_token_pair(str(user.id), user.token_version)
+
+    async def register(self, data: RegisterIn) -> tuple[User, str]:
+        phone = self.normalize_phone(data.contact_number)
+
+        existing = await self._user_repo.get_by_contact_number(phone)
+        if existing is not None:
+            raise UserAlreadyExistsError()
+
+        user = User(
+            name=data.name,
+            contact_number=phone,
+            telegram_user_id=data.telegram_user_id,
+            address=data.address,
+            roles=int(Role.USER),
+        )
+        await self._user_repo.create(user)
+
+        code = await self.send_otp(phone)
+        return user, code
 
 
 def get_auth_service(
-    session: SessionDep,
+    auth_repo: AuthRepositoryDep, user_repo: UserRepositoryDep
 ) -> AuthService:
-    return AuthService(session)
-    
+    return AuthService(auth_repo, user_repo)
+
+
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]

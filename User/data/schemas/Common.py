@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from sqlmodel import SQLModel
 
 
-class DeleteResponse(BaseModel):
+class MessageResponse(SQLModel):
     success: bool
-    status: str
+    message: str

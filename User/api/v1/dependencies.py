@@ -1,23 +1,21 @@
-from typing import Annotated
-from uuid import UUID
+from typing import Annotated, Callable
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from data.entities.Admin import Admin
-from data.entities.Person import Person
+from data.entities.User import User
 from services.AuthService import AuthServiceDep
-from services.Exeptions import InvalidToken, InvalidTokenType, TokenHasExpired
-from services.PersonService import PersonServiceDep
-
+from services.Exeptions import AppException
+from services.UserService import UserServiceDep
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
-async def get_current_person(
+async def get_current_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
-    authService: AuthServiceDep,
-    personService: PersonServiceDep
-) -> Person:
+    auth_service: AuthServiceDep,
+    user_service: UserServiceDep,
+) -> User:
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -25,37 +23,27 @@ async def get_current_person(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    token = credentials.credentials
-
     try:
-        payload = authService.decode_token(token, expected_type="access")
-    except TokenHasExpired as e:
-        raise HTTPException(
-            status_code=e.status_code,
-            detail=e.message,
-            headers={"WWW-Authenticate": "Bearer"},
+        payload = auth_service.decode_token(
+            credentials.credentials, expected_type="access"
         )
-    except (InvalidToken, InvalidTokenType) as e:
+    except AppException as exc:
         raise HTTPException(
-            status_code=e.status_code,
-            detail=e.message,
+            status_code=exc.status_code,
+            detail=exc.message,
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     jti = payload["jti"]
-    if await authService.is_token_blacklisted(jti):
+    if await auth_service.is_token_revoked(jti):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Токен отозван",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    user_id = payload["sub"]
-    if isinstance(user_id, str):
-        user_id = UUID(user_id)
-
-    person = await personService.get(user_id)
-    if not person:
+    user = await user_service._repo.get_by_id(payload["sub"])
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Пользователь не найден",
@@ -63,26 +51,29 @@ async def get_current_person(
         )
 
     token_version = payload.get("ver")
-    if token_version is not None and token_version != person.token_version:
+    if token_version is not None and token_version != user.token_version:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Токен устарел",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return person
+    return user
 
 
-CurrentPersonDep = Annotated[Person, Depends(get_current_person)]
+CurrentUserDep = Annotated[User, Depends(get_current_user)]
 
 
-async def get_current_admin(current_person: CurrentPersonDep) -> Admin:
-    if current_person.admin is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Недостаточно прав",
-        )
-    return current_person.admin
+def require_role(role: str) -> Callable:
+    async def _check(current_user: CurrentUserDep) -> User:
+        if not current_user.has_role(role):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Недостаточно прав",
+            )
+        return current_user
+
+    return _check
 
 
-CurrentAdminDep = Annotated[Admin, Depends(get_current_admin)]
+CurrentAdminDep = Annotated[User, Depends(require_role("admin"))]

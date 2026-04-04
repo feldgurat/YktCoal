@@ -1,45 +1,51 @@
-from typing import Optional
+from typing import Annotated
 
-from sqlmodel import select
-from data.entities.SmsCode import SmsCode
-from data.repositories.BaseRepo import BaseRepository
+from fastapi import Depends
+import redis.asyncio as redis
+
+from config import settings
+from data.redis import get_redis
 
 
-class AuthRepository(BaseRepository[SmsCode]):
-    model = SmsCode
-    
-    async def invalidate_old_sms_codes(self, phone: str) -> None:
-        result = await self.session.exec(
-            select(SmsCode).where(
-                SmsCode.phone == phone,
-                SmsCode.consumed == False,
-            )
-        )
-        codes = result.all()
-        for item in codes:
-            item.consumed = True
-        await self.session.flush()
-            
-    async def get_last_code_result(self, phone: str) -> Optional[SmsCode]:
-        last_code_result = await self.session.exec(
-        select(SmsCode)
-        .where(SmsCode.phone == phone)
-        .order_by(SmsCode.created_at.desc())
-        )
-        last_code = last_code_result.first()
-        if last_code is not None:
-            return last_code
-        return None
-        
-    async def get_actual_sms_code(self, phone: str) -> Optional[SmsCode]:
-        stmt = (
-            select(SmsCode)
-            .where(
-                SmsCode.phone == phone,
-                SmsCode.consumed == False,
-            )
-            .order_by(SmsCode.created_at.desc())
-            .limit(1)
-        )
-        result = await self.session.exec(stmt)
-        return result.first()
+class AuthRepository:
+    _OTP_KEY = "otp:{phone}"
+    _RATE_KEY = "otp_rate:{phone}"
+    _BLACKLIST_KEY = "token_bl:{jti}"
+
+    def __init__(self, redis_client: redis.Redis) -> None:
+        self._redis = redis_client
+
+    async def save_otp(self, phone: str, code_hash: str) -> None:
+        key = self._OTP_KEY.format(phone=phone)
+        await self._redis.setex(key, settings.OTP_TTL_SECONDS, code_hash)
+
+    async def get_otp(self, phone: str) -> str | None:
+        key = self._OTP_KEY.format(phone=phone)
+        return await self._redis.get(key)
+
+    async def delete_otp(self, phone: str) -> None:
+        key = self._OTP_KEY.format(phone=phone)
+        await self._redis.delete(key)
+
+    async def is_rate_limited(self, phone: str) -> bool:
+        key = self._RATE_KEY.format(phone=phone)
+        return await self._redis.exists(key) > 0
+
+    async def set_rate_limit(self, phone: str) -> None:
+        key = self._RATE_KEY.format(phone=phone)
+        await self._redis.setex(key, settings.OTP_RATE_LIMIT_SECONDS, "1")
+
+    async def blacklist_token(self, jti: str, ttl_seconds: int) -> None:
+        key = self._BLACKLIST_KEY.format(jti=jti)
+        await self._redis.setex(key, ttl_seconds, "1")
+
+    async def is_token_blacklisted(self, jti: str) -> bool:
+        key = self._BLACKLIST_KEY.format(jti=jti)
+        return await self._redis.exists(key) > 0
+
+
+def get_auth_repository() -> AuthRepository:
+    return AuthRepository(get_redis())
+
+
+AuthRepositoryDep = Annotated[AuthRepository, Depends(get_auth_repository)]
