@@ -23,10 +23,12 @@ function RegisterForm({ onRegSuccess }) {
                 contact_number: phone, 
                 telegram_user_id: tg, 
                 address });
+
         onRegSuccess({ 
         ...response.data,   // то, что вернул бэкенд (может быть code, session_id и т.д.)
         userPhone: phone    // исходный номер, который ввёл пользователь
         });
+
         } catch (err) {
             const getErrorMessage = (error) => {
                 if (error.response) {
@@ -98,7 +100,6 @@ return (
             {loading ? 'Регистрация...' : 'Зарегистрироваться'}
         </button>
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        <Link className='font-montserrat' to="/">Вернуться</Link>
     </form>
 );
 }

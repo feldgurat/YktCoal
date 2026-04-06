@@ -71,7 +71,6 @@ return (
             {loading ? 'Проверка...' : 'Войти'}
         </button>
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        <Link className='font-montserrat' to="/">Вернуться</Link>
     </form>
 );
 }

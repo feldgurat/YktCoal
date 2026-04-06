@@ -1,9 +1,23 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import bgImage from '../assets/coal2.jpg';
 import lightImage from '../assets/light.png';
 import { Footer } from "../components/Footer";
+import AuthModal from "../components/AuthModal"; 
+import { useState } from "react";
 
 export const Landing = () => {
+  const navigate = useNavigate();
+  const [showModal, setShowModal] = useState(false);
+
+  const handleAuthSuccess = (tokens) => {
+    // тут можно сохранить токены, если нужно
+    console.log("Авторизация успешна", tokens);
+    localStorage.setItem('access_token', tokens.access_token);
+    localStorage.setItem('refresh_token', tokens.refresh_token);
+    // после успешного входа можно, например, перенаправить на профиль или обновить состояние
+    // setShowModal(false);
+    navigate('/profile')
+  };
   return (
     <>
       <div className="h-screen w-full bg-cover bg-center bg-black"
@@ -18,9 +32,12 @@ export const Landing = () => {
               <a href="#" className="hover:underline underline-offset-6 font-montserrat text-[20px] font-bold text-white">
                 Перейти в ТГ-бота
               </a>
-              <Link to="/register" className="hover:underline underline-offset-6 font-montserrat text-[20px] font-bold text-white">
+              <button
+                onClick={() => setShowModal(true)}
+                className="hover:underline underline-offset-6 font-montserrat text-[20px] font-bold text-white"
+              >
                 Войти в систему
-              </Link>
+              </button>
             </nav>
         </header>
 
@@ -112,6 +129,11 @@ export const Landing = () => {
       
 
       <Footer></Footer>
+      <AuthModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </>
   )
   
