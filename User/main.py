@@ -1,55 +1,48 @@
-import data.entities
+import logging
 from contextlib import asynccontextmanager
-from fastapi import APIRouter, FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import select
-import uvicorn
-from data.Database import close_redis, get_session, init_db, init_redis
-from api.v1.User import router as user_router
-from api.v1.Person import router as person_router
-from api.v1.Admin import router as admin_router
-from api.v1.Driver import router as driver_router
-from api.v1.Auth import router as auth_router
-from api.v1.Telegram import router as telegram_router
+
+from fastapi import FastAPI
+
+from data.Database import async_session_factory, create_tables, engine
+from data.Redis import close_redis, init_redis
+from services.Startup import create_default_admin
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+    logger.info("Starting up...")
+
+    await create_tables()
+    logger.info("Database tables ready")
+
     await init_redis()
+    logger.info("Redis connected")
+
+    async with async_session_factory() as session:
+        await create_default_admin(session)
+
+    logger.info("Startup complete")
     yield
+
     await close_redis()
+    await engine.dispose()
+    logger.info("Shutdown complete")
 
 
-app = FastAPI(lifespan=lifespan)
-app.include_router(user_router)
-app.include_router(admin_router)
-app.include_router(driver_router)
-app.include_router(person_router)
+app = FastAPI(title="App API", version="1.0.0", lifespan=lifespan)
+
+from api.v1.Auth import router as auth_router  # noqa: E402
+from api.v1.User import router as users_router  # noqa: E402
+from api.v1.Telegram import router as telegram_router  # noqa: E402
+
 app.include_router(auth_router)
+app.include_router(users_router)
 app.include_router(telegram_router)
 
-live_router = APIRouter()
-@live_router.get("/")
-def root():
-    return "IM LIVE MOTHAFAKA"
-app.include_router(live_router)
 
-
-origins = [
-    "http://localhost:5173",  # адрес Vite-сервера
-    "http://127.0.0.1:5173",
-    # для продакшена добавьте домен вашего сайта
-]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],      # разрешаем все HTTP-методы
-    allow_headers=["*"],      # разрешаем все заголовки
-)
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", reload=True)
-    session = get_session()
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
