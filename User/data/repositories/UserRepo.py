@@ -3,7 +3,7 @@ from typing import Annotated, Sequence
 from fastapi import Depends
 from sqlmodel import SQLModel, select
 
-from data.database import SessionDep
+from data.Database import SessionDep
 from data.entities.Role import role_name_to_bit
 from data.entities.User import User
 from data.repositories.BaseRepo import BaseRepository

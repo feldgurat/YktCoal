@@ -34,9 +34,9 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="App API", version="1.0.0", lifespan=lifespan)
 
-from api.v1.auth import router as auth_router  # noqa: E402
-from api.v1.users import router as users_router  # noqa: E402
-from api.v1.telegram import router as telegram_router  # noqa: E402
+from api.v1.Auth import router as auth_router  # noqa: E402
+from api.v1.User import router as users_router  # noqa: E402
+from api.v1.Telegram import router as telegram_router  # noqa: E402
 
 app.include_router(auth_router)
 app.include_router(users_router)

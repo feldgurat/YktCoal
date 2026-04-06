@@ -4,7 +4,7 @@ from fastapi import Depends
 import redis.asyncio as redis
 
 from config import settings
-from data.redis import get_redis
+from data.Redis import get_redis
 
 
 class AuthRepository:
