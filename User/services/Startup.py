@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 async def create_default_admin(session: AsyncSession) -> None:
-    result = await session.execute(select(User))
-    all_users = result.scalars().all()
+    result = await session.exec(select(User))
+    all_users = result.all()
 
     admins = [u for u in all_users if u.has_role("admin")]
     if admins:

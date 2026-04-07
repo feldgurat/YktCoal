@@ -42,6 +42,15 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(telegram_router)
 
+from starlette.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # на проде замените на конкретные домены
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/health")
 async def health():
