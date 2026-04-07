@@ -6,7 +6,7 @@ import { AUTH } from '../api/endpoints'
 function RegisterForm({ onRegSuccess }) {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
-    const [tg, setTg] = useState('');
+    const [tg, setTg] = useState(null);
     const [address, setAddress] = useState('');
 
     const [loading, setLoading] = useState(false);
@@ -79,14 +79,14 @@ return (
             required
             className='font-montserrat bg-gray-200 p-1 rounded-[3px] focus:outline-none focus:ring-0'
         />
-        <input
+        {/* <input
             type="text"
             value={tg}
             onChange={(e) => setTg(e.target.value)}
             placeholder="Введите TG USER ID"
             required
             className='font-montserrat bg-gray-200 p-1 rounded-[3px] focus:outline-none focus:ring-0'
-        />
+        /> */}
         <input
             type="text"
             value={address}

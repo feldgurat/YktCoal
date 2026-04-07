@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api'; // ваш настроенный axios instance
 import { USERS } from '../api/endpoints';
+import MapComponent from '../components/MapComponent';
 
 function Profile() {
   const [user, setUser] = useState(null);
@@ -40,6 +41,12 @@ function Profile() {
       </div>
     );
   }
+const handleBuildRoute = () => {
+  // Координаты точек: [долгота, широта]
+  const pointA = [37.6176, 55.7558]; // Москва
+  const pointB = [37.6715, 55.7566]; // Например, Красная площадь
+  buildRoute(pointA, pointB);
+};
 
   return (
     <div className="p-8 mx-20">
@@ -49,8 +56,10 @@ function Profile() {
       <div className="bg-white shadow-[0_4px_4px_rgba(0,0,0,0.25)] rounded-lg p-6 max-w-md">
         <p><span className="font-semibold">Имя:</span> {user?.name}</p>
         <p><span className="font-semibold">Телефон:</span> {user?.contact_number}</p>
-        <p><span className="font-semibold">Telegram ID:</span> {user?.telegram_user_id}</p>
+        {/* <p><span className="font-semibold">Telegram ID:</span> {user?.telegram_user_id}</p> */}
       </div>
+      <MapComponent />
+      <button onClick={handleBuildRoute}>Построить маршрут</button>
     </div>
   );
 }
