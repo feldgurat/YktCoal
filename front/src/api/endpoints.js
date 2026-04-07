@@ -13,6 +13,6 @@ export const AUTH = {
 
 // Эндпоинты пользователей
 export const USERS = {
-  GET_ME: '/api/v1/users/my_profile',
+  GET_ME: '/api/v1/users/me',
   // ...
 };

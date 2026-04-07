@@ -10,19 +10,21 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
 
     const handleLoginCodeSent = (data) => {
         setPhone(data.userPhone || data.phone);
-        setCode(data.code || data.status);
+        setCode(data.debug_code);
         setStep('code');
     };
 
     const handleRegisterSuccess = (data) => {
         setPhone(data.userPhone || data.phone);
-        setCode(data.status);
+        setCode(data.message);
         setStep('code');
     };
 
     const handleLogin = (tokens) => {
         // Здесь можно сохранить токены и данные пользователя (если нужно)
         // Пока просто закрываем модалку и вызываем onSuccess
+        // localStorage.setItem('access_token', tokens.access_token);
+        // localStorage.setItem('refresh_token', tokens.refresh_token);
         onSuccess(tokens);
         onClose();
     };

@@ -14,8 +14,6 @@ export const Landing = () => {
     console.log("Авторизация успешна", tokens);
     localStorage.setItem('access_token', tokens.access_token);
     localStorage.setItem('refresh_token', tokens.refresh_token);
-    // после успешного входа можно, например, перенаправить на профиль или обновить состояние
-    // setShowModal(false);
     navigate('/profile')
   };
   return (
