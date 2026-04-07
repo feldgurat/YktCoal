@@ -2,7 +2,7 @@ from typing import Annotated, Sequence
 
 from fastapi import Depends
 
-from data.entities.Role import names_to_mask
+from data.entities.Role import RoleHelpers
 from data.entities.User import User
 from data.repositories.UserRepo import UserRepository, UserRepositoryDep
 from data.schemas.User import UserCreate, UserRead, UserUpdate
@@ -55,7 +55,7 @@ class UserService:
             raise UserAlreadyExistsError()
 
         try:
-            role_mask = names_to_mask(data.roles)
+            role_mask = RoleHelpers.names_to_mask(data.roles)
         except ValueError as e:
             raise InvalidRoleError(str(e))
 

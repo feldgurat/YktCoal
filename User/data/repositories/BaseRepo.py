@@ -2,22 +2,23 @@ from typing import Generic, Sequence, TypeVar
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import SQLModel, select
 
-T = TypeVar("T")
+T = TypeVar("T", bound=SQLModel)
 
 
 class BaseRepository(Generic[T]):
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession, model: type[T]) -> None:
         self._session = session
+        self._model = model
 
     async def get_by_id(self, entity_id: str) -> T | None:
-        return await self._session.get(T, entity_id)
+        return await self._session.get(self._model, entity_id)
 
 
     async def get_all(self) -> Sequence[T]:
         result = await self._session.exec(
-            select(T)
+            select(self._model)
         )
-        return result.scalars().all()
+        return result.all()
 
 
 
