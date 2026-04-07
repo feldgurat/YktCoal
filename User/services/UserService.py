@@ -83,6 +83,7 @@ class UserService:
         user = await self.get(user_id)
         try:
             user.add_role(role_name)
+            self._repo._session.flush()
         except ValueError:
             raise InvalidRoleError(f"Неизвестная роль: {role_name}")
         return user
@@ -91,6 +92,7 @@ class UserService:
         user = await self.get(user_id)
         try:
             user.remove_role(role_name)
+            self._repo._session.flush()
         except ValueError:
             raise InvalidRoleError(f"Неизвестная роль: {role_name}")
         return user
