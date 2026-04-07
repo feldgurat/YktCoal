@@ -1,18 +1,47 @@
-from typing import Optional
-from uuid import UUID
-from sqlmodel import Field, Relationship, SQLModel
+import uuid
+from datetime import datetime, timezone
 
-from data.entities.Person import Person
-from data.entities.PersonProxyMixin import PersonProxyMixin
+from data.entities.Role import RoleHelpers
+from sqlmodel import Field, SQLModel
 
-class User(PersonProxyMixin, SQLModel, table=True):
+
+
+class User(SQLModel, table=True):
     __tablename__ = "users"
 
-    person_id: UUID = Field(
-        foreign_key="persons.id",
+    id: str = Field(
+        default_factory=lambda: str(uuid.uuid4()),
         primary_key=True,
-        ondelete="CASCADE",
+        max_length=36,
     )
-    address: Optional[str] = Field(default=None, max_length=512)
+    name: str = Field(max_length=255)
+    contact_number: str = Field(max_length=20, unique=True, index=True)
+    telegram_user_id: str | None = Field(default=None)
+    address: str | None = Field(default=None, max_length=512)
+    roles: int = Field(default=0)
+    token_version: int = Field(default=0)
+    is_active: bool = Field(default=True)
+    created_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+    updated_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
 
-    person: Optional["Person"] = Relationship(back_populates="user")
+    # ── Role helpers ───────────────────────────────────────────
+
+    def has_role(self, role_name: str) -> bool:
+        bit = RoleHelpers.role_name_to_bit(role_name)
+        return bool(self.roles & bit)
+
+    def add_role(self, role_name: str) -> None:
+        bit = RoleHelpers.role_name_to_bit(role_name)
+        self.roles |= bit
+
+    def remove_role(self, role_name: str) -> None:
+        bit = RoleHelpers.role_name_to_bit(role_name)
+        self.roles &= ~bit
+
+    @property
+    def role_names(self) -> list[str]:
+        return RoleHelpers.mask_to_names(self.roles)

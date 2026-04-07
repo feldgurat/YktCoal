@@ -1,24 +1,34 @@
-from uuid import UUID
+from datetime import datetime
 
-from pydantic import BaseModel
+from sqlmodel import SQLModel, Field
 
-from data.schemas.Person import PersonCreate, PersonRead, PersonUpdate
 
-class UserBase(BaseModel):
+class UserCreate(SQLModel):
+    name: str = Field(min_length=1, max_length=255)
+    contact_number: str = Field(min_length=10, max_length=20)
+    telegram_user_id: str | None = None
+    address: str | None = None
+    roles: list[str] = Field(default_factory=lambda: ["user"])
+
+
+class UserUpdate(SQLModel):
+    name: str | None = None
+    contact_number: str | None = None
+    telegram_user_id: str | None = None
     address: str | None = None
 
 
-class UserCreate(UserBase):
-    pass
+class UserRoleUpdate(SQLModel):
+    role: str
 
 
-class UserCreateWithPerson(UserCreate, PersonCreate):
-    pass
-
-
-class UserUpdate(PersonUpdate):
-    address: str | None = None
-
-
-class UserRead(PersonRead):
-    address: str | None = None
+class UserRead(SQLModel):
+    id: str
+    name: str
+    contact_number: str
+    telegram_user_id: str | None
+    address: str | None
+    roles: list[str]
+    is_active: bool
+    created_at: str
+    updated_at: str

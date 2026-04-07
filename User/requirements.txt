@@ -1,0 +1,8 @@
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30
+sqlmodel>=0.0.22
+sqlalchemy[asyncio]>=2.0
+aiosqlite>=0.20
+pydantic-settings>=2.0
+PyJWT>=2.8
+redis>=5.0

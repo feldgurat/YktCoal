@@ -1,26 +1,31 @@
-from pydantic import BaseModel, Field
+from sqlmodel import SQLModel, Field
 
 
-class SmsRequestIn(BaseModel):
-    phone: str = Field(examples=["+79991234567"])
+class SmsRequestIn(SQLModel):
+    phone: str = Field(min_length=10, max_length=20)
 
 
-class SmsVerifyIn(BaseModel):
-    phone: str = Field(examples=["+79991234567"])
-    code: str = Field(min_length=4, max_length=8, examples=["123456"])
+class SmsVerifyIn(SQLModel):
+    phone: str = Field(min_length=10, max_length=20)
+    code: str = Field(min_length=4, max_length=6)
 
-class SmsCodeRequestAnswer(BaseModel):
-    status: str = Field(examples=["ok"])
-    message: str = Field(examples=["Код отправлен"])
 
-class TokenPair(BaseModel):
+class RefreshIn(SQLModel):
+    refresh_token: str
+
+
+class TokenPair(SQLModel):
     access_token: str
     refresh_token: str
-    token_type: str = "bearer"
 
-class RefreshIn(BaseModel):
-    refresh_token: str
 
-class RegisterAnswer(BaseModel):
+class RegisterIn(SQLModel):
+    name: str = Field(min_length=1, max_length=255)
+    contact_number: str = Field(min_length=10, max_length=20)
+    telegram_user_id: str | None = None
+    address: str | None = None
+
+
+class RegisterOut(SQLModel):
     success: bool
-    status: str
+    message: str

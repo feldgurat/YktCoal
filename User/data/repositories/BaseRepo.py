@@ -1,33 +1,49 @@
-from __future__ import annotations
-
-from abc import ABC
-from typing import Generic, TypeVar, Any
-
-from sqlmodel import SQLModel, select
+from datetime import datetime, timezone
+from typing import Generic, Sequence, TypeVar
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import SQLModel, select
 
-ModelT = TypeVar("ModelT", bound=SQLModel)
+T = TypeVar("T", bound=SQLModel)
 
 
-class BaseRepository(ABC, Generic[ModelT]):
-    model: type[ModelT]
+class BaseRepository(Generic[T]):
+    def __init__(self, session: AsyncSession, model: type[T]) -> None:
+        self._session = session
+        self._model = model
 
-    def __init__(self, session: AsyncSession) -> None:
-        self.session = session
+    async def get_by_id(self, entity_id: str) -> T | None:
+        return await self._session.get(self._model, entity_id)
 
-    async def add(self, obj: ModelT) -> ModelT:
-        self.session.add(obj)
-        await self.session.flush()
-        return obj
 
-    async def get(self, pk: Any) -> ModelT | None:
-        return await self.session.get(self.model, pk)
+    async def get_all(self) -> Sequence[T]:
+        result = await self._session.exec(
+            select(self._model)
+        )
+        return result.all()
 
-    async def list(self) -> list[ModelT]:
-        stmt = select(self.model)
-        result = await self.session.exec(stmt)
-        return list(result.all())
 
-    async def delete(self, obj: ModelT) -> None:
-        await self.session.delete(obj)
-        await self.session.flush()
+
+    async def create(self, entity: T) -> T:
+        self._session.add(entity)
+        await self._session.flush()
+        return entity
+
+
+    async def update(self, entity_id: str, data: SQLModel) -> T | None:
+        ent = await self.get_by_id(entity_id)
+        if ent is None:
+            return None
+        ent.updated_at = datetime.now(timezone.utc).isoformat()
+        for field, value in data.model_dump(exclude_unset=True).items():
+            setattr(ent, field, value)
+        await self._session.flush()
+        return ent
+
+
+    async def delete(self, entity_id: str) -> bool:
+        ent = await self.get_by_id(entity_id)
+        if ent is None:
+            return False
+        await self._session.delete(ent)
+        await self._session.flush()
+        return True
