@@ -1,79 +1,39 @@
-import os
 from typing import Annotated, AsyncGenerator
+
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
+from sqlmodel.ext.asyncio.session import AsyncSession
 
+from config import settings
 
-DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///database.db")
-REDIS_URL: str = os.getenv("REDIS_URL", "redis://default:cCNeFrB1w5a1onpg7eG0WtFae1@yktcoal.feldgurat.ru:6379/0")
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=False,
+    connect_args={"check_same_thread": False},
+)
 
-def create_engine(url: str = DATABASE_URL) -> AsyncEngine:
-
-    connect_args = {}
-
-    if url.startswith("sqlite"):
-        connect_args["check_same_thread"] = False
-
-    return create_async_engine(
-        url,
-        echo=True,
-        connect_args=connect_args,
-    )
-
-
-engine: AsyncEngine = create_engine()
-
-
-SessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
-    bind=engine,
+async_session_factory = sessionmaker(
+    engine,
     class_=AsyncSession,
     expire_on_commit=False,
-    autoflush=False,
 )
 
 
-
-async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    session = SessionLocal()
-    try:
-        yield session
-    finally:
-        await session.close()
-
-SessionDep = Annotated[AsyncSession, Depends(get_session)]
-
-async def init_db() -> None:
+async def create_tables() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
 
 
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session_factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 
 
-
-
-
-from redis.asyncio import Redis
-
-redis_client: Redis | None = None
-
-
-async def init_redis() -> None:
-    global redis_client
-    redis_client = Redis.from_url(
-        REDIS_URL,
-        encoding="utf-8",
-        decode_responses=True,
-    )
-
-
-async def close_redis() -> None:
-    global redis_client
-    if redis_client is not None:
-        await redis_client.aclose()
-
-
-def get_redis() -> Redis:
-    if redis_client is None:
-        raise RuntimeError("Redis is not initialized")
-    return redis_client
+SessionDep = Annotated[AsyncSession, Depends(get_session)]

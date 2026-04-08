@@ -1,14 +1,32 @@
-from typing import Optional
-from uuid import UUID
+from typing import Annotated, Sequence
 
-from .BaseRepo import BaseRepository
+from fastapi import Depends
+from sqlmodel import SQLModel, select
+
+from data.Database import SessionDep
+from data.entities.Role import RoleHelpers
 from data.entities.User import User
-from sqlmodel.ext.asyncio.session import AsyncSession
+from data.repositories.BaseRepo import BaseRepository
+
 
 class UserRepository(BaseRepository[User]):
-    def __init__(self):
-        super().__init__(User)
+    async def get_by_contact_number(self, phone: str) -> User | None:
+        result = await self._session.exec(
+            select(User).where(User.contact_number == phone)
+        )
+        return result.one_or_none()
 
-    def get_user_address(self, id: UUID, session: AsyncSession) -> Optional[str]:
-        user = session.get(User, id)
-        return None if user is None else user.address
+    async def get_by_role(self, role_name: str) -> Sequence[User]:
+        bit = RoleHelpers.role_name_to_bit(role_name)
+        result = await self._session.exec(
+            select(User).where(User.roles.op("&")(bit) != 0)
+        )
+        return result.all()
+
+
+
+def get_user_repository(session: SessionDep) -> UserRepository:
+    return UserRepository(session, User)
+
+
+UserRepositoryDep = Annotated[UserRepository, Depends(get_user_repository)]

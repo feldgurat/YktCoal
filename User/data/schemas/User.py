@@ -1,24 +1,34 @@
-from typing import Optional
-from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field
+from datetime import datetime
 
-from .Person import PersonCreate, PersonRead
+from sqlmodel import SQLModel, Field
 
-class UserCreateForExistingPerson(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    id: UUID
-    address: Optional[str] = Field(default=None, max_length=255)
 
-class UserUpdate(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    id: UUID
-    address: Optional[str] = Field(default=None, max_length=255)
+class UserCreate(SQLModel):
+    name: str = Field(min_length=1, max_length=255)
+    contact_number: str = Field(min_length=10, max_length=20)
+    telegram_user_id: str | None = None
+    address: str | None = None
+    roles: list[str] = Field(default_factory=lambda: ["user"])
 
-class UserRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: UUID
-    address: Optional[str] = None
 
-class UserReadFull(PersonRead):
-    model_config = ConfigDict(extra="forbid")
-    address: Optional[str] = None
+class UserUpdate(SQLModel):
+    name: str | None = None
+    contact_number: str | None = None
+    telegram_user_id: str | None = None
+    address: str | None = None
+
+
+class UserRoleUpdate(SQLModel):
+    role: str
+
+
+class UserRead(SQLModel):
+    id: str
+    name: str
+    contact_number: str
+    telegram_user_id: str | None
+    address: str | None
+    roles: list[str]
+    is_active: bool
+    created_at: str
+    updated_at: str

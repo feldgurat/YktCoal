@@ -1,78 +1,49 @@
-from typing import Any, Generic, List, Optional, TypeVar
-from uuid import UUID
-
-from pydantic_extra_types.phone_numbers import PhoneNumber
-from sqlmodel import SQLModel, select
+from datetime import datetime, timezone
+from typing import Generic, Sequence, TypeVar
 from sqlmodel.ext.asyncio.session import AsyncSession
+from sqlmodel import SQLModel, select
 
 T = TypeVar("T", bound=SQLModel)
 
 
 class BaseRepository(Generic[T]):
-    def __init__(self, model: type[T]):
-        self.model = model
+    def __init__(self, session: AsyncSession, model: type[T]) -> None:
+        self._session = session
+        self._model = model
 
-    async def save_entity(self, entity: T, session: AsyncSession) -> T:
-        session.add(entity)
-        await session.flush()
-        await session.refresh(entity)
+    async def get_by_id(self, entity_id: str) -> T | None:
+        return await self._session.get(self._model, entity_id)
+
+
+    async def get_all(self) -> Sequence[T]:
+        result = await self._session.exec(
+            select(self._model)
+        )
+        return result.all()
+
+
+
+    async def create(self, entity: T) -> T:
+        self._session.add(entity)
+        await self._session.flush()
         return entity
 
-    async def update_entity(
-        self,
-        id: UUID,
-        data: dict[str, Any],
-        session: AsyncSession,
-    ) -> Optional[T]:
-        entity = await session.get(self.model, id)
-        if entity is None:
+
+    async def update(self, entity_id: str, data: SQLModel) -> T | None:
+        ent = await self.get_by_id(entity_id)
+        if ent is None:
             return None
+        ent.updated_at = datetime.now(timezone.utc).isoformat()
+        for field, value in data.model_dump(exclude_unset=True).items():
+            setattr(ent, field, value)
+        await self._session.flush()
+        return ent
 
-        for key, value in data.items():
-            if hasattr(entity, key):
-                setattr(entity, key, value)
 
-        session.add(entity)
-        await session.flush()
-        await session.refresh(entity)
-        return entity
-
-    async def delete_entity(self, id: UUID, session: AsyncSession) -> bool:
-        entity = await session.get(self.model, id)
-        if entity is None:
+    async def delete(self, entity_id: str) -> bool:
+        ent = await self.get_by_id(entity_id)
+        if ent is None:
             return False
-
-        await session.delete(entity)
-        await session.flush()
+        await self._session.delete(ent)
+        await self._session.flush()
         return True
-
-    async def get_entities(
-        self,
-        session: AsyncSession,
-        limit: int = 100,
-        skip: int = 0,
-    ) -> List[T]:
-        stmt = select(self.model).offset(skip).limit(limit)
-        result = await session.execute(stmt)
-        return result.scalars().all()
-
-    async def get_entity(self, id: UUID, session: AsyncSession) -> Optional[T]:
-        return await session.get(self.model, id)
-
-    async def get_entity_by_number(
-        self,
-        contactNumber: PhoneNumber,
-        session: AsyncSession,
-    ) -> Optional[T]:
-        stmt = select(self.model).where(self.model.contactNumber == str(contactNumber))
-        result = await session.execute(stmt)
-        return result.scalar_one_or_none()
-
-    async def get_entity_by_telegram_user_id(
-        self,
-        telegramUserId: str,
-        session: AsyncSession,
-    ) -> Optional[T]:
-        stmt = select(self.model).where(self.model.telegramUserId == str(telegramUserId))
-        result = await session.execute(stmt)
-        return result.scalar_one_or_none()

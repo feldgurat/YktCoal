@@ -1,10 +1,8 @@
 /__pycache__/
-/app.db
-/data/__pycache__/
-/data/entities/__pycache__/
-/venv/
-/data/repositories/__pycache__/
-/data/schemas/__pycache__/
 */__pycache__/
+*/*/__pycache__/
+*/*/*/__pycache__/
 /database.db
 /.DS_Store
+/.env
+/*/.DS_Store

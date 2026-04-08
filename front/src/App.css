@@ -1,0 +1,30 @@
+@import "tailwindcss";
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  background: #fff; /* цвет фона, чтобы контент не просвечивал */
+  z-index: 100;
+  flex-shrink: 0;
+  /* остальные стили (высота, отступы) задаются внутри компонента */
+}
+
+.main-content {
+  flex-grow: 1;
+  /* внутренние отступы для страниц можно задавать уже в самих компонентах */
+}
+
+.footer {
+  flex-shrink: 0;
+}
