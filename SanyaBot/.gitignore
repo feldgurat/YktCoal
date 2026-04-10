@@ -3,3 +3,5 @@
 */*/*/__pycache__/
 /BotTG/data/
 /data/
+/.env/
+/venv/
