@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, status
 
+from api.v1.dependencies import UserWithPayload
 from api.routes import API_V1_PREFIX, AUTH
 from data.schemas.Auth import (
+    LogoutIn,
     RefreshIn,
     RegisterIn,
     RegisterOut,
@@ -61,3 +63,21 @@ async def register(data: RegisterIn, auth_service: AuthServiceDep):
     return RegisterOut(
         success=True, message=f"Пользователь создан. Код отправлен. {code}"
     )
+
+ 
+
+ 
+@router.post("/logout")
+async def logout(
+    data: LogoutIn,
+    auth_service: AuthServiceDep,
+    user_and_payload: UserWithPayload,
+):
+    _, payload = user_and_payload
+    try:
+        await auth_service.logout_with_payload(payload, data.refresh_token)
+    except AppException as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+ 
+    return {"status": "ok"}
+ 

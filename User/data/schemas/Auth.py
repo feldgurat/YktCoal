@@ -29,3 +29,6 @@ class RegisterIn(SQLModel):
 class RegisterOut(SQLModel):
     success: bool
     message: str
+
+class LogoutIn(SQLModel):
+    refresh_token: str

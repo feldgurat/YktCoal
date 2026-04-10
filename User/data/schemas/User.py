@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlmodel import SQLModel, Field
+from sqlmodel import UUID, SQLModel, Field
 
 
 class UserCreate(SQLModel):
@@ -23,7 +23,7 @@ class UserRoleUpdate(SQLModel):
 
 
 class UserRead(SQLModel):
-    id: str
+    id: UUID
     name: str
     contact_number: str
     telegram_user_id: str | None
