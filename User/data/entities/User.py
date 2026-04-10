@@ -2,14 +2,14 @@ import uuid
 from datetime import datetime, timezone
 
 from data.entities.Role import RoleHelpers
-from sqlmodel import UUID, Field, SQLModel
+from sqlmodel import Field, SQLModel
 
 
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
-    id: UUID = Field(
+    id: uuid.UUID = Field(
         default_factory=uuid.uuid4(),
         primary_key=True
     )
