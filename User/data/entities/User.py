@@ -2,17 +2,16 @@ import uuid
 from datetime import datetime, timezone
 
 from data.entities.Role import RoleHelpers
-from sqlmodel import Field, SQLModel
+from sqlmodel import UUID, Field, SQLModel
 
 
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
-    id: str = Field(
-        default_factory=lambda: str(uuid.uuid4()),
-        primary_key=True,
-        max_length=36,
+    id: UUID = Field(
+        default_factory=uuid.uuid4(),
+        primary_key=True
     )
     name: str = Field(max_length=255)
     contact_number: str = Field(max_length=20, unique=True, index=True)

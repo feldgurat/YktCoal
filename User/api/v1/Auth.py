@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 
-from User.api.v1.dependencies import UserWithPayload
+from api.v1.dependencies import UserWithPayload
 from api.routes import API_V1_PREFIX, AUTH
 from data.schemas.Auth import (
     LogoutIn,
