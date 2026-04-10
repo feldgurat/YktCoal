@@ -15,6 +15,7 @@ from data.repositories.AuthRepo import AuthRepository, AuthRepositoryDep
 from data.repositories.UserRepo import UserRepository, UserRepositoryDep
 from data.schemas.Auth import RegisterIn
 from services.Exeptions import (
+    AppException,
     InvalidTokenError,
     InvalidTokenTypeError,
     OtpInvalidError,
@@ -39,7 +40,7 @@ class AuthService:
         if digits.startswith("8") and len(digits) == 11:
             digits = "7" + digits[1:]
         if not digits.startswith("7") or len(digits) != 11:
-            raise ValueError("Некорректный номер телефона")
+            raise AppException("Некорректный номер телефона", status_code=400)
         return f"+{digits}"
 
     # ── OTP ────────────────────────────────────────────────────
@@ -165,7 +166,7 @@ class AuthService:
         if await self.is_token_revoked(jti):
             raise TokenRevokedError()
 
-        user = await self._user_repo.get_by_id(user_id)
+        user = await self._user_repo.get_by_id(uuid.UUID(user_id))
         if user is None:
             raise UserNotFoundError()
 

@@ -1,4 +1,5 @@
 from typing import Annotated, Any, Callable
+import uuid
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -41,7 +42,7 @@ async def get_current_user_with_payload(
             headers={"WWW-Authenticate": "Bearer"},
         )
  
-    user = await user_service._repo.get_by_id(payload["sub"])
+    user = await user_service._repo.get_by_id(uuid.UUID(payload["sub"]))
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
