@@ -1,13 +1,15 @@
 // pages/Profile.jsx
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api'; // ваш настроенный axios instance
-import { USERS } from '../api/endpoints';
+import { USERS, AUTH } from '../api/endpoints';
 import MapComponent from '../components/MapComponent';
 
 function Profile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -26,6 +28,21 @@ function Profile() {
     fetchUser();
   }, []);
 
+  const handleLogout = async() => {
+    try {
+      const refresh = localStorage.getItem('refresh_token');
+      await api.post(AUTH.LOGOUT, { refresh_token: refresh });
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('refresh_token');
+      navigate('/login');
+    } catch (error){
+      console.error('Ошибка при выходе:', error);
+      //localStorage.removeItem('access_token');
+      //localStorage.removeItem('refresh_token');
+      //navigate('/login');
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -41,12 +58,7 @@ function Profile() {
       </div>
     );
   }
-const handleBuildRoute = () => {
-  // Координаты точек: [долгота, широта]
-  const pointA = [37.6176, 55.7558]; // Москва
-  const pointB = [37.6715, 55.7566]; // Например, Красная площадь
-  buildRoute(pointA, pointB);
-};
+
 
   return (
     <div className="p-8 mx-20">
@@ -57,9 +69,11 @@ const handleBuildRoute = () => {
         <p><span className="font-semibold">Имя:</span> {user?.name}</p>
         <p><span className="font-semibold">Телефон:</span> {user?.contact_number}</p>
         {/* <p><span className="font-semibold">Telegram ID:</span> {user?.telegram_user_id}</p> */}
+        <button className='text-red-500 font-semibold hover:underline'
+        onClick={handleLogout}>Выйти</button>
       </div>
       <MapComponent />
-      <button onClick={handleBuildRoute}>Построить маршрут</button>
+      
     </div>
   );
 }

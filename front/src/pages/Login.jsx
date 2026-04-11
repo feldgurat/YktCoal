@@ -11,7 +11,7 @@ function Login() {
 
     const handleCodeSent = (data) => {
         setPhone(data.userPhone);
-        setCode(data.code);
+        setCode(data.debug_code);
         setStep('code');
     };
 

@@ -9,6 +9,7 @@ export const AUTH = {
   VERIFY_CODE: '/api/v1/auth/sign-in-code-answer',
   REFRESH: '/api/v1/auth/refresh',
   REGISTER: '/api/v1/auth/register',
+  LOGOUT: '/api/v1/auth/logout'
 };
 
 // Эндпоинты пользователей
