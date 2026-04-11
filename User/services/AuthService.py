@@ -197,8 +197,9 @@ class AuthService:
         code = await self.send_otp(phone)
         return user, code
     
-    async def logout(self, access_token: str, refresh_token: str) -> None:
-        access_payload = self.decode_token(access_token, expected_type="access")
+    async def logout(
+        self, access_payload: dict, refresh_token: str
+    ) -> None:
         await self.revoke_token(access_payload["jti"], access_payload["exp"])
 
         refresh_payload = self.decode_token(refresh_token, expected_type="refresh")
