@@ -75,7 +75,7 @@ async def logout(
 ):
     _, payload = user_and_payload
     try:
-        await auth_service.logout_with_payload(payload, data.refresh_token)
+        await auth_service.logout(payload, data.refresh_token)
     except AppException as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.message)
  
