@@ -10,14 +10,12 @@ class SmsVerifyIn(SQLModel):
     code: str = Field(min_length=4, max_length=6)
 
 
-class RefreshIn(SQLModel):
-    refresh_token: str
-
-
-class TokenPair(SQLModel):
+class AccessTokenOut(SQLModel):
     access_token: str
-    refresh_token: str
 
+
+class StatusOut(SQLModel):
+    status: str
 
 class RegisterIn(SQLModel):
     name: str = Field(min_length=1, max_length=255)
@@ -29,6 +27,3 @@ class RegisterIn(SQLModel):
 class RegisterOut(SQLModel):
     success: bool
     message: str
-
-class LogoutIn(SQLModel):
-    refresh_token: str
