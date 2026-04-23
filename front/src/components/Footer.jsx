@@ -1,20 +1,26 @@
 import { Link, useNavigate } from "react-router-dom"
-import AuthModal from "../components/AuthModal"; 
 import { useState } from "react";
+import { useAuth } from '../auth/AuthContext';
+import AuthModal from '../components/AuthModal';
+
 export const Footer = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [showModal, setShowModal] = useState(false);
 
-  const handleAuthSuccess = (tokens) => {
-    // тут можно сохранить токены, если нужно
-    console.log("Авторизация успешна", tokens);
-    localStorage.setItem('access_token', tokens.access_token);
-    localStorage.setItem('refresh_token', tokens.refresh_token);
-    // после успешного входа можно, например, перенаправить на профиль или обновить состояние
-    // setShowModal(false);
-    navigate('/profile')
+  const handleAuthClick = () => {
+    if (!isAuthenticated) {
+      setShowModal(true);
+    }
+    else {
+      navigate('/profile');
+    }
   };
-  
+
+  const handleAuthSuccess = () => {
+    navigate('/profile');
+  };
+
   return (
     <footer className="w-full bg-[#434343] h-[140px] shadow-[0_4px_4px_8px_rgba(0,0,0,0.25)] ">
       <AuthModal
@@ -22,7 +28,7 @@ export const Footer = () => {
         onClose={() => setShowModal(false)}
         onSuccess={handleAuthSuccess}
       />
-      <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+      <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
         {/* Left column: Contact info with icons */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -47,8 +53,8 @@ export const Footer = () => {
 
         {/* Middle-left column: White links */}
         <div className="space-y-2">
-          <button onClick={() => setShowModal(true)} className="block font-montserrat text-xs text-white hover:underline underline-offset-4">
-            Войти в систему
+          <button onClick={handleAuthClick} className="block font-montserrat text-xs text-white hover:underline underline-offset-4">
+            {isAuthenticated ? 'Личный кабинет' : 'Войти в систему'}
           </button>
           <a href="#" className="block font-montserrat text-xs text-white hover:underline underline-offset-4">
             Контакты
