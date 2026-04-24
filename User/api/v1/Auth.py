@@ -69,7 +69,7 @@ async def refresh_tokens(
         key="refresh_token",
         value=new_refresh,
         httponly=True,
-        secure=True,
+        secure=False,
         samesite="strict",
         path=f"{API_V1_PREFIX}{AUTH}",
         max_age=7 * 24 * 3600,
