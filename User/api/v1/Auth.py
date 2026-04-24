@@ -47,7 +47,7 @@ async def verify_sign_in_code(data: SmsVerifyIn, auth_service: AuthServiceDep):
         httponly=True,
         secure=False,           # False для localhost без HTTPS
         samesite="strict",
-        path="/api/auth",      # cookie летит только на auth-эндпоинты
+        path=f"{API_V1_PREFIX}{AUTH}",      # cookie летит только на auth-эндпоинты
         max_age=7 * 24 * 3600, # 7 дней
     )
     return response
@@ -71,7 +71,7 @@ async def refresh_tokens(
         httponly=True,
         secure=True,
         samesite="strict",
-        path="/api/auth",
+        path=f"{API_V1_PREFIX}{AUTH}",
         max_age=7 * 24 * 3600,
     )
     return response
@@ -106,6 +106,6 @@ async def logout(
         raise HTTPException(status_code=exc.status_code, detail=exc.message)
 
     response = JSONResponse(content={"status": "ok"})
-    response.delete_cookie("refresh_token", path="/api/auth")
+    response.delete_cookie("refresh_token", path=f"{API_V1_PREFIX}{AUTH}")
     return response
  
