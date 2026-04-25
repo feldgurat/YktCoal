@@ -1,8 +1,34 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
+import { useState } from "react";
+import { useAuth } from '../auth/AuthContext';
+import AuthModal from '../components/AuthModal';
+
 export const Footer = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const [showModal, setShowModal] = useState(false);
+
+  const handleAuthClick = () => {
+    if (!isAuthenticated) {
+      setShowModal(true);
+    }
+    else {
+      navigate('/profile');
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    navigate('/profile');
+  };
+
   return (
-    <footer className="w-full bg-[#434343] h-[140px] shadow-[0_4px_4px_8px_rgba(0,0,0,0.25)] text-white">
-      <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+    <footer className="w-full bg-[#434343] h-[140px] shadow-[0_4px_4px_8px_rgba(0,0,0,0.25)] ">
+      <AuthModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSuccess={handleAuthSuccess}
+      />
+      <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
         {/* Left column: Contact info with icons */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -27,9 +53,9 @@ export const Footer = () => {
 
         {/* Middle-left column: White links */}
         <div className="space-y-2">
-          <a href="#" className="block font-montserrat text-xs text-white hover:underline underline-offset-4">
-            <Link to="/login">Войти в систему</Link>
-          </a>
+          <button onClick={handleAuthClick} className="block font-montserrat text-xs text-white hover:underline underline-offset-4">
+            {isAuthenticated ? 'Личный кабинет' : 'Войти в систему'}
+          </button>
           <a href="#" className="block font-montserrat text-xs text-white hover:underline underline-offset-4">
             Контакты
           </a>
