@@ -1,26 +1,24 @@
-import { Link, useNavigate } from 'react-router-dom';
+// src/pages/Landing.jsx
 import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+
 import bgImage from '../assets/coal2.jpg';
 import lightImage from '../assets/light.png';
 import { Footer } from '../components/Footer';
 import AuthModal from '../components/AuthModal';
-import { useAuth } from '../auth/AuthContext';
+import { selectIsAuthenticated } from '../store/authSlice';
 
 export const Landing = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const [showModal, setShowModal] = useState(false);
 
-  // Колбэк после успешного входа через модалку.
-  // Всё сохранение токенов и user state уже сделано в AuthModal → useAuth.login().
-  // Здесь остаётся только редирект.
   const handleAuthSuccess = () => {
     navigate('/profile');
   };
 
-  // Кликается кнопка «Войти в систему»:
-  //   — если уже залогинен → сразу в профиль (без перелогина)
-  //   — иначе → открываем модалку
+  // Если уже залогинен → сразу в профиль; иначе → открываем модалку.
   const handleAuthButtonClick = () => {
     if (isAuthenticated) {
       navigate('/profile');

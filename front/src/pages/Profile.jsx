@@ -1,16 +1,19 @@
-// pages/Profile.jsx
+// src/pages/Profile.jsx
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+
 import MapComponent from '../components/MapComponent';
-import { useAuth } from '../auth/AuthContext';
+import { logout, selectUser } from '../store/authSlice';
 
 function Profile() {
-  // AuthProvider уже загрузил пользователя при старте или после логина —
-  // здесь просто берём его из контекста. Отдельный fetch /users/me не нужен.
-  const { user, logout } = useAuth();
+  // Пользователь уже загружен при старте (bootstrapAuth) или после логина —
+  // здесь просто читаем из store.
+  const user = useSelector(selectUser);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    await logout();
+    await dispatch(logout());
     navigate('/login', { replace: true });
   };
 

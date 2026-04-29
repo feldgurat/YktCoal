@@ -1,11 +1,12 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useState } from "react";
-import { useAuth } from '../auth/AuthContext';
+import { useSelector } from 'react-redux';
 import AuthModal from '../components/AuthModal';
+import { selectIsAuthenticated } from '../store/authSlice';
 
 export const Footer = () => {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const [showModal, setShowModal] = useState(false);
 
   const handleAuthClick = () => {
