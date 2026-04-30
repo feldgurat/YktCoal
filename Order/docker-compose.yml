@@ -1,0 +1,15 @@
+services:
+  order-backend:
+    build: .
+    ports:
+      - "8001:8001"
+    volumes:
+      - .:/app
+      - sqlite_data:/app/db
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./db/orders.db
+      - JWT_SECRET=change-me-in-production
+      - USER_SERVICE_URL=http://user-backend:8000
+
+volumes:
+  sqlite_data:
