@@ -24,12 +24,6 @@ export const Header = () => {
 
         <nav className="flex gap-8 items-center">
           <Link
-            to="/requests"
-            className="font-montserrat font-semibold text-lg text-black hover:underline underline-offset-4"
-          >
-            Мои заявки
-          </Link>
-          <Link
             to="/orders"
             className="font-montserrat font-semibold text-lg text-black hover:underline underline-offset-4"
           >
@@ -41,12 +35,7 @@ export const Header = () => {
           >
             Профиль
           </Link>
-          <button
-            onClick={handleLogout}
-            className="font-montserrat font-semibold text-lg text-red-500 hover:underline underline-offset-4"
-          >
-            Выйти
-          </button>
+
         </nav>
       </div>
     </header>

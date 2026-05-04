@@ -9,7 +9,6 @@ import { Landing } from './pages/Landing';
 import { Test } from './pages/Test';
 import { Orders } from './pages/Orders';
 import Profile from './pages/Profile';
-import { Requests } from './pages/Requests';
 import Login from './pages/Login';
 import Register from './pages/Register';
 
@@ -45,7 +44,6 @@ function App() {
             <Route path="/test" element={<Test />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/requests" element={<Requests />} />
           </Route>
         </Route>
       </Routes>

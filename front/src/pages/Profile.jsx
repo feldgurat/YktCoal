@@ -36,7 +36,6 @@ function Profile() {
           Выйти
         </button>
       </div>
-      <MapComponent />
     </div>
   );
 }
