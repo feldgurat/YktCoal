@@ -8,12 +8,12 @@ from data.entities.Resource import Resource
 
 
 class OrderStatus(IntEnum):
-    NEW = 1
-    ACCEPTED = 2
-    IN_PROGRESS = 3
-    COMPLETED = 4
-    CANCELLED = 5
-    REJECTED = 6
+    NEW = 1           # клиент создал заявку, водители могут предлагать офферы
+    ACCEPTED = 2      # клиент принял оффер, водитель назначен
+    IN_PROGRESS = 3   # водитель в пути / доставляет
+    COMPLETED = 4     # доставка завершена
+    CANCELLED = 5     # клиент отменил
+    REJECTED = 6      # админ отклонил
 
 
 STATUS_LABELS: dict[OrderStatus, str] = {
@@ -25,7 +25,6 @@ STATUS_LABELS: dict[OrderStatus, str] = {
     OrderStatus.REJECTED: "Отклонён",
 }
 
-# Допустимые переходы статусов
 ALLOWED_TRANSITIONS: dict[OrderStatus, list[OrderStatus]] = {
     OrderStatus.NEW: [OrderStatus.ACCEPTED, OrderStatus.CANCELLED, OrderStatus.REJECTED],
     OrderStatus.ACCEPTED: [OrderStatus.IN_PROGRESS, OrderStatus.CANCELLED, OrderStatus.REJECTED],
@@ -52,6 +51,8 @@ class Order(SQLModel, table=True):
     resource: Resource | None = Relationship()
 
     volume: float = Field(default=1.0)
+
+    # cost = 0 при создании; заполняется ценой из принятого оффера
     cost: int = Field(default=0)
 
     delivery_date: str | None = Field(default=None)

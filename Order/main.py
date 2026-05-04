@@ -28,13 +28,15 @@ async def lifespan(app: FastAPI):
     logger.info("Shutdown complete")
 
 
-app = FastAPI(title="Order API", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Order API", version="2.0.0", lifespan=lifespan)
 
 from api.v1.Order import router as order_router
 from api.v1.Resource import router as resource_router
+from api.v1.Offer import router as offer_router
 
 app.include_router(order_router)
 app.include_router(resource_router)
+app.include_router(offer_router)
 
 app.add_middleware(
     CORSMiddleware,
