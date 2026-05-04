@@ -29,10 +29,6 @@ class OrderStatusUpdate(SQLModel):
     status: int
 
 
-class OrderAssignDriver(SQLModel):
-    driver_id: UUID
-
-
 class OrderRead(SQLModel):
     id: UUID
     client_id: UUID

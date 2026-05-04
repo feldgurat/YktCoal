@@ -90,8 +90,7 @@ class OrderService:
         if resource is None:
             raise ResourceNotFoundError()
 
-        cost = int(data.volume * resource.price_per_unit)
-
+        # cost = 0; итоговая цена определяется принятым оффером
         order = Order(
             client_id=client_id,
             dest_address=data.dest_address,
@@ -99,16 +98,15 @@ class OrderService:
             longitude=data.longitude,
             resource_id=data.resource_id,
             volume=data.volume,
-            cost=cost,
+            cost=0,
             delivery_date=data.delivery_date,
             comment=data.comment,
             status=int(OrderStatus.NEW),
         )
         created = await self._order_repo.create(order)
-
         return await self.get(created.id)
 
-    # ── Update ─────────────────────────────────────────────────
+    # ── Update (только NEW) ───────────────────────────────────
 
     async def update(
         self, order_id: uuid.UUID, data: OrderUpdate, requester_id: uuid.UUID
@@ -118,7 +116,7 @@ class OrderService:
         if order.client_id != requester_id:
             raise AccessDeniedError()
 
-        if order.order_status not in (OrderStatus.NEW,):
+        if order.order_status != OrderStatus.NEW:
             raise InvalidStatusTransitionError(
                 "Редактировать можно только заказ в статусе «Новый»"
             )
@@ -126,10 +124,6 @@ class OrderService:
         order.updated_at = datetime.now(timezone.utc).isoformat()
         for field, value in data.model_dump(exclude_unset=True).items():
             setattr(order, field, value)
-
-        # Пересчитать стоимость если изменился объём
-        if data.volume is not None and order.resource is not None:
-            order.cost = int(data.volume * order.resource.price_per_unit)
 
         await self._order_repo._session.flush()
         return await self.get(order_id)
@@ -148,22 +142,6 @@ class OrderService:
             )
 
         order.status = int(target)
-        order.updated_at = datetime.now(timezone.utc).isoformat()
-        await self._order_repo._session.flush()
-        return await self.get(order_id)
-
-    async def assign_driver(
-        self, order_id: uuid.UUID, driver_id: uuid.UUID
-    ) -> Order:
-        order = await self.get(order_id)
-
-        if order.order_status != OrderStatus.NEW:
-            raise InvalidStatusTransitionError(
-                "Назначить водителя можно только для нового заказа"
-            )
-
-        order.driver_id = driver_id
-        order.status = int(OrderStatus.ACCEPTED)
         order.updated_at = datetime.now(timezone.utc).isoformat()
         await self._order_repo._session.flush()
         return await self.get(order_id)

@@ -1,14 +1,16 @@
 from typing import Annotated, Any, Callable
 import uuid
 
-import httpx
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from config import settings
+from data.Redis import get_redis
 
 bearer_scheme = HTTPBearer(auto_error=False)
+
+_BLACKLIST_KEY = "token_bl:{jti}"
 
 
 class TokenUser:
@@ -23,22 +25,6 @@ class TokenUser:
 
     def has_role(self, role: str) -> bool:
         return role in self.roles
-
-
-async def _fetch_roles_from_user_service(token: str) -> list[str]:
-    """Запрашиваем /api/v1/users/me у User-сервиса, чтобы получить роли."""
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get(
-                f"{settings.USER_SERVICE_URL}/api/v1/users/me",
-                headers={"Authorization": f"Bearer {token}"},
-            )
-        if resp.status_code != 200:
-            return ["user"]
-        data = resp.json()
-        return data.get("roles", ["user"])
-    except Exception:
-        return ["user"]
 
 
 async def get_current_token_user(
@@ -80,13 +66,21 @@ async def get_current_token_user(
             detail="Неверный тип токена",
         )
 
-    user_id = uuid.UUID(payload["sub"])
+    # Проверка blacklist в общем Redis
+    jti = payload.get("jti")
+    if jti:
+        redis_client = get_redis()
+        if await redis_client.exists(_BLACKLIST_KEY.format(jti=jti)):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Токен отозван",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
 
-    raw_roles = payload.get("roles")
-    if isinstance(raw_roles, list):
-        roles = raw_roles
-    else:
-        roles = await _fetch_roles_from_user_service(raw_token)
+    user_id = uuid.UUID(payload["sub"])
+    roles = payload.get("roles", ["user"])
+    if not isinstance(roles, list):
+        roles = ["user"]
 
     return TokenUser(user_id, roles, payload)
 

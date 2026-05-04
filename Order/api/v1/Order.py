@@ -11,7 +11,6 @@ from api.v1.dependencies import (
 from data.entities.Order import OrderStatus
 from data.schemas.Order import (
     MessageResponse,
-    OrderAssignDriver,
     OrderCreate,
     OrderRead,
     OrderStatusUpdate,
@@ -23,13 +22,13 @@ from services.OrderService import OrderServiceDep
 router = APIRouter(prefix=f"{API_V1_PREFIX}{ORDERS}", tags=["Orders"])
 
 
-def _to_read(service, order):
-    return service.to_read(order)
-
-
 def _handle(exc: AppException):
     raise HTTPException(status_code=exc.status_code, detail=exc.message)
 
+
+# ══════════════════════════════════════════════════════════════
+# Client endpoints
+# ══════════════════════════════════════════════════════════════
 
 
 @router.post("", response_model=OrderRead, status_code=201)
@@ -38,7 +37,7 @@ async def create_order(
     token_user: CurrentTokenUserDep,
     order_service: OrderServiceDep,
 ):
-    """Клиент создаёт заказ."""
+    """Клиент создаёт заявку. Цена будет определена через офферы водителей."""
     try:
         order = await order_service.create(token_user.id, data)
     except AppException as exc:
@@ -54,69 +53,6 @@ async def get_my_orders(
     """Заказы текущего пользователя (как клиента)."""
     orders = await order_service.get_by_client(token_user.id)
     return [order_service.to_read(o) for o in orders]
-
-
-@router.get("/available", response_model=list[OrderRead])
-async def get_available_orders(
-    _driver: CurrentDriverDep,
-    order_service: OrderServiceDep,
-):
-    """Доступные заказы для водителей (NEW, без водителя)."""
-    orders = await order_service.get_available()
-    return [order_service.to_read(o) for o in orders]
-
-
-@router.get("/driver/my", response_model=list[OrderRead])
-async def get_driver_orders(
-    token_user: CurrentDriverDep,
-    order_service: OrderServiceDep,
-):
-    """Заказы, назначенные текущему водителю."""
-    orders = await order_service.get_by_driver(token_user.id)
-    return [order_service.to_read(o) for o in orders]
-
-
-@router.get("/by-status/{status}", response_model=list[OrderRead])
-async def get_orders_by_status(
-    status: int,
-    _admin: CurrentAdminDep,
-    order_service: OrderServiceDep,
-):
-    """Все заказы с определённым статусом (admin)."""
-    orders = await order_service.get_by_status(status)
-    return [order_service.to_read(o) for o in orders]
-
-
-@router.get("", response_model=list[OrderRead])
-async def get_all_orders(
-    _admin: CurrentAdminDep,
-    order_service: OrderServiceDep,
-):
-    """Все заказы (admin)."""
-    orders = await order_service.get_all()
-    return [order_service.to_read(o) for o in orders]
-
-
-@router.get("/{order_id}", response_model=OrderRead)
-async def get_order(
-    order_id: UUID,
-    token_user: CurrentTokenUserDep,
-    order_service: OrderServiceDep,
-):
-    """Получить заказ по ID. Клиент видит свои, водитель — свои, админ — все."""
-    try:
-        order = await order_service.get(order_id)
-    except AppException as exc:
-        _handle(exc)
-
-    is_owner = order.client_id == token_user.id
-    is_driver = order.driver_id == token_user.id
-    is_admin = token_user.has_role("admin")
-
-    if not (is_owner or is_driver or is_admin):
-        raise HTTPException(status_code=403, detail="Нет доступа к этому заказу")
-
-    return order_service.to_read(order)
 
 
 @router.patch("/{order_id}", response_model=OrderRead)
@@ -153,18 +89,24 @@ async def cancel_order(
 # ══════════════════════════════════════════════════════════════
 
 
-@router.post("/{order_id}/accept", response_model=OrderRead)
-async def accept_order(
-    order_id: UUID,
+@router.get("/available", response_model=list[OrderRead])
+async def get_available_orders(
+    _driver: CurrentDriverDep,
+    order_service: OrderServiceDep,
+):
+    """Доступные заказы для водителей (NEW, открыты для офферов)."""
+    orders = await order_service.get_available()
+    return [order_service.to_read(o) for o in orders]
+
+
+@router.get("/driver/my", response_model=list[OrderRead])
+async def get_driver_orders(
     token_user: CurrentDriverDep,
     order_service: OrderServiceDep,
 ):
-    """Водитель принимает заказ (назначает себя)."""
-    try:
-        order = await order_service.assign_driver(order_id, token_user.id)
-    except AppException as exc:
-        _handle(exc)
-    return order_service.to_read(order)
+    """Заказы, назначенные текущему водителю (оффер принят)."""
+    orders = await order_service.get_by_driver(token_user.id)
+    return [order_service.to_read(o) for o in orders]
 
 
 @router.post("/{order_id}/start", response_model=OrderRead)
@@ -220,18 +162,46 @@ async def complete_delivery(
 # ══════════════════════════════════════════════════════════════
 
 
-@router.post("/{order_id}/assign", response_model=OrderRead)
-async def assign_driver(
-    order_id: UUID,
-    data: OrderAssignDriver,
+@router.get("/by-status/{status}", response_model=list[OrderRead])
+async def get_orders_by_status(
+    status: int,
     _admin: CurrentAdminDep,
     order_service: OrderServiceDep,
 ):
-    """Админ назначает водителя на заказ."""
+    """Все заказы с определённым статусом (admin)."""
+    orders = await order_service.get_by_status(status)
+    return [order_service.to_read(o) for o in orders]
+
+
+@router.get("", response_model=list[OrderRead])
+async def get_all_orders(
+    _admin: CurrentAdminDep,
+    order_service: OrderServiceDep,
+):
+    """Все заказы (admin)."""
+    orders = await order_service.get_all()
+    return [order_service.to_read(o) for o in orders]
+
+
+@router.get("/{order_id}", response_model=OrderRead)
+async def get_order(
+    order_id: UUID,
+    token_user: CurrentTokenUserDep,
+    order_service: OrderServiceDep,
+):
+    """Получить заказ по ID."""
     try:
-        order = await order_service.assign_driver(order_id, data.driver_id)
+        order = await order_service.get(order_id)
     except AppException as exc:
         _handle(exc)
+
+    is_owner = order.client_id == token_user.id
+    is_driver = order.driver_id == token_user.id
+    is_admin = token_user.has_role("admin")
+
+    if not (is_owner or is_driver or is_admin):
+        raise HTTPException(status_code=403, detail="Нет доступа к этому заказу")
+
     return order_service.to_read(order)
 
 

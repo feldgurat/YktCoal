@@ -15,13 +15,18 @@ class ResourceNotFoundError(AppException):
         super().__init__(message, status_code=404)
 
 
+class OfferNotFoundError(AppException):
+    def __init__(self, message: str = "Предложение не найдено") -> None:
+        super().__init__(message, status_code=404)
+
+
 class InvalidStatusTransitionError(AppException):
     def __init__(self, message: str = "Недопустимый переход статуса") -> None:
         super().__init__(message, status_code=422)
 
 
 class AccessDeniedError(AppException):
-    def __init__(self, message: str = "Нет доступа к этому заказу") -> None:
+    def __init__(self, message: str = "Нет доступа") -> None:
         super().__init__(message, status_code=403)
 
 
@@ -33,3 +38,18 @@ class InvalidTokenError(AppException):
 class TokenExpiredError(AppException):
     def __init__(self, message: str = "Токен просрочен") -> None:
         super().__init__(message, status_code=401)
+
+
+class DuplicateOfferError(AppException):
+    def __init__(self, message: str = "Вы уже отправили предложение на этот заказ") -> None:
+        super().__init__(message, status_code=409)
+
+
+class OrderNotAcceptingOffersError(AppException):
+    def __init__(self, message: str = "Заказ не принимает предложения") -> None:
+        super().__init__(message, status_code=422)
+
+
+class OfferAlreadyHandledError(AppException):
+    def __init__(self, message: str = "Предложение уже обработано") -> None:
+        super().__init__(message, status_code=422)
