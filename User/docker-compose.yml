@@ -11,7 +11,7 @@ services:
       timeout: 3s
       retries: 5
 
-  backend:
+  user-backend:
     build: .
     ports:
       - "8000:8000"
