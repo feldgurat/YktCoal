@@ -1,4 +1,15 @@
+# Для standalone-запуска. В продакшене используйте корневой docker-compose.yml
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   order-backend:
     build: .
     ports:
@@ -8,8 +19,11 @@ services:
       - sqlite_data:/app/db
     environment:
       - DATABASE_URL=sqlite+aiosqlite:///./db/orders.db
+      - REDIS_URL=redis://redis:6379/0
       - JWT_SECRET=change-me-in-production
-      - USER_SERVICE_URL=http://user-backend:8000
+    depends_on:
+      redis:
+        condition: service_healthy
 
 volumes:
   sqlite_data:
