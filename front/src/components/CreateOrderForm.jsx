@@ -235,7 +235,7 @@ function CreateOrderForm({ onCreated }) {
         {/* Карта */}
         <div>
           <label className="font-montserrat font-semibold text-sm block mb-1">
-            Укажите точку на карте
+            Укажите точку на карте <span className="text-red-500">*</span>
           </label>
           <div
             ref={mapRef}
@@ -251,9 +251,10 @@ function CreateOrderForm({ onCreated }) {
         {/* Дата доставки */}
         <div>
           <label className="font-montserrat font-semibold text-sm block mb-1">
-            Желаемая дата доставки
+            Желаемая дата доставки <span className="text-red-500">*</span>
           </label>
           <input
+            required
             type="date"
             value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)}
