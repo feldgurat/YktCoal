@@ -16,6 +16,12 @@ class UserRepository(BaseRepository[User]):
         )
         return result.one_or_none()
 
+    async def get_by_telegram_user_id(self, tg_id: str) -> User | None:
+        result = await self._session.exec(
+            select(User).where(User.telegram_user_id == tg_id)
+        )
+        return result.one_or_none()
+
     async def get_by_role(self, role_name: str) -> Sequence[User]:
         bit = RoleHelpers.role_name_to_bit(role_name)
         result = await self._session.exec(

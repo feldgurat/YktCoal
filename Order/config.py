@@ -8,6 +8,8 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "change-me-in-production"
     JWT_ALGORITHM: str = "HS256"
 
+    DRIVER_SERVICE_URL: str = "http://driver-backend:8002"
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 
