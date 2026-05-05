@@ -34,3 +34,10 @@ export const RESOURCES = {
   LIST: '/api/v1/resources',
   GET_BY_ID: (id) => `/api/v1/resources/${id}`,
 };
+
+// Эндпоинты предложений (Order-сервис)
+export const OFFERS = {
+  BY_ORDER: (orderId) => `/api/v1/orders/${orderId}/offers`,
+  ACCEPT: (offerId) => `/api/v1/offers/${offerId}/accept`,
+  REJECT: (offerId) => `/api/v1/offers/${offerId}/reject`,
+};

@@ -1,7 +1,8 @@
 // src/components/OrderCard.jsx
+import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { cancelOrder } from '../store/orderSlice';
-import { useState } from 'react';
+import OfferList from './OfferList';
 
 // Цвета для статусов
 const STATUS_COLORS = {
@@ -20,6 +21,7 @@ function OrderCard({ order }) {
   const dispatch = useDispatch();
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState('');
+  const [showOffers, setShowOffers] = useState(false);
 
   const handleCancel = async () => {
     if (!window.confirm('Вы уверены, что хотите отменить заявку?')) return;
@@ -47,9 +49,12 @@ function OrderCard({ order }) {
 
   const statusColor = STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800';
 
+  // Показываем стоимость только если она определена (> 0, т.е. оффер принят)
+  const hasCost = order.cost > 0;
+
   return (
     <div className="bg-white shadow-[0_4px_4px_rgba(0,0,0,0.25)] rounded-lg p-5 font-montserrat">
-      {/* Шапка: ID-статус */}
+      {/* Шапка: ID + статус */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-xs text-gray-400">
           #{order.id?.slice(0, 8)}
@@ -71,10 +76,20 @@ function OrderCard({ order }) {
           <span className="font-semibold">Объём:</span>{' '}
           {order.volume} {order.resource?.unit || 'т.'}
         </p>
-        <p>
-          <span className="font-semibold">Стоимость:</span>{' '}
-          {order.cost?.toLocaleString('ru-RU')} ₽
-        </p>
+
+        {hasCost ? (
+          <p>
+            <span className="font-semibold">Стоимость:</span>{' '}
+            <span className="text-green-700 font-bold">
+              {order.cost.toLocaleString('ru-RU')} ₽
+            </span>
+          </p>
+        ) : (
+          <p className="text-gray-400 italic text-xs">
+            Стоимость определится после принятия предложения
+          </p>
+        )}
+
         <p>
           <span className="font-semibold">Адрес:</span> {order.dest_address}
         </p>
@@ -98,16 +113,32 @@ function OrderCard({ order }) {
         <p className="text-xs text-red-600 mt-2">{error}</p>
       )}
 
-      {/* Кнопка отмены */}
-      {CANCELLABLE.includes(order.status) && (
+      {/* Действия */}
+      <div className="flex items-center gap-3 mt-3">
+        {/* Кнопка «Предложения» */}
         <button
-          onClick={handleCancel}
-          disabled={cancelling}
-          className="mt-3 text-sm font-semibold text-red-500 hover:underline
-                     disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => setShowOffers((prev) => !prev)}
+          className="text-sm font-semibold text-blue-500 hover:underline"
         >
-          {cancelling ? 'Отмена...' : 'Отменить заявку'}
+          {showOffers ? 'Скрыть предложения' : 'Предложения'}
         </button>
+
+        {/* Кнопка отмены */}
+        {CANCELLABLE.includes(order.status) && (
+          <button
+            onClick={handleCancel}
+            disabled={cancelling}
+            className="text-sm font-semibold text-red-500 hover:underline
+                       disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {cancelling ? 'Отмена...' : 'Отменить'}
+          </button>
+        )}
+      </div>
+
+      {/* Список предложений */}
+      {showOffers && (
+        <OfferList orderId={order.id} orderStatus={order.status} />
       )}
     </div>
   );

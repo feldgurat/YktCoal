@@ -100,15 +100,14 @@ function CreateOrderForm({ onCreated }) {
 
       onCreated?.();
 
-      // Через 3 секунды сбрасываем статус, чтобы можно было создать новую
       const timer = setTimeout(() => dispatch(resetCreateStatus()), 3000);
       return () => clearTimeout(timer);
     }
   }, [createStatus, dispatch, onCreated]);
 
-  // ── Вычисляемая стоимость ──────────────────────────────────
+  // ── Справочная цена (для ориентира, итоговую назначает водитель) ──
   const selectedResource = resources.find((r) => r.id === resourceId);
-  const estimatedCost =
+  const refPrice =
     selectedResource && volume
       ? Math.round(parseFloat(volume) * selectedResource.price_per_unit)
       : null;
@@ -141,11 +140,14 @@ function CreateOrderForm({ onCreated }) {
 
   return (
     <div className="bg-white shadow-[0_4px_4px_rgba(0,0,0,0.25)] rounded-lg p-6">
-      <h2 className="font-dela text-2xl mb-6">Новая заявка</h2>
+      <h2 className="font-dela text-2xl mb-2">Новая заявка</h2>
+      <p className="text-sm text-gray-500 font-montserrat mb-5">
+        После создания заявки водители смогут предложить свою цену и сроки доставки.
+      </p>
 
       {createStatus === 'succeeded' && (
         <div className="mb-4 p-3 bg-green-50 border border-green-300 rounded-md text-green-800 font-montserrat text-sm">
-          Заявка успешно создана!
+          Заявка успешно создана! Ожидайте предложений от водителей.
         </div>
       )}
 
@@ -167,7 +169,7 @@ function CreateOrderForm({ onCreated }) {
             required
             disabled={resourcesStatus === 'loading'}
             className="w-full font-montserrat bg-gray-100 p-2.5 rounded-md border border-gray-300
-                       focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
           >
             <option value="">
               {resourcesStatus === 'loading'
@@ -199,13 +201,16 @@ function CreateOrderForm({ onCreated }) {
             placeholder="Например: 2.5"
             required
             className="w-full font-montserrat bg-gray-100 p-2.5 rounded-md border border-gray-300
-                       focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
           />
-          {estimatedCost !== null && estimatedCost > 0 && (
-            <p className="mt-1 text-sm text-gray-600 font-montserrat">
-              Ориентировочная стоимость:{' '}
-              <span className="font-bold text-black">
-                {estimatedCost.toLocaleString('ru-RU')} ₽
+          {refPrice !== null && refPrice > 0 && (
+            <p className="mt-1 text-sm text-gray-500 font-montserrat">
+              Справочная цена:{' '}
+              <span className="font-semibold">
+                ~{refPrice.toLocaleString('ru-RU')} ₽
+              </span>
+              <span className="text-xs text-gray-400 ml-1">
+                (итоговую цену предложат водители)
               </span>
             </p>
           )}
