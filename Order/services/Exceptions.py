@@ -53,3 +53,8 @@ class OrderNotAcceptingOffersError(AppException):
 class OfferAlreadyHandledError(AppException):
     def __init__(self, message: str = "Предложение уже обработано") -> None:
         super().__init__(message, status_code=422)
+
+
+class DriverNotActiveError(AppException):
+    def __init__(self, message: str = "Водитель не активен") -> None:
+        super().__init__(message, status_code=403)

@@ -1,9 +1,12 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Annotated, Sequence
 
+import httpx
 from fastapi import Depends
 
+from config import settings
 from data.entities.Offer import OFFER_STATUS_LABELS, Offer, OfferStatus
 from data.entities.Order import Order, OrderStatus
 from data.repositories.OfferRepo import OfferRepository, OfferRepositoryDep
@@ -11,12 +14,15 @@ from data.repositories.OrderRepo import OrderRepository, OrderRepositoryDep
 from data.schemas.Offer import OfferCreate, OfferRead
 from services.Exceptions import (
     AccessDeniedError,
+    DriverNotActiveError,
     DuplicateOfferError,
     OfferAlreadyHandledError,
     OfferNotFoundError,
     OrderNotAcceptingOffersError,
     OrderNotFoundError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class OfferService:
@@ -79,6 +85,9 @@ class OfferService:
         if order.order_status != OrderStatus.NEW:
             raise OrderNotAcceptingOffersError()
 
+        # Проверяем статус водителя в Driver-сервисе
+        await self._check_driver_active(driver_id)
+
         existing = await self._offer_repo.get_by_order_and_driver(order_id, driver_id)
         if existing is not None:
             raise DuplicateOfferError()
@@ -92,6 +101,23 @@ class OfferService:
             status=int(OfferStatus.PENDING),
         )
         return await self._offer_repo.create(offer)
+
+    @staticmethod
+    async def _check_driver_active(driver_id: uuid.UUID) -> None:
+        url = f"{settings.DRIVER_SERVICE_URL}/api/v1/drivers/by-user/{driver_id}/status"
+        try:
+            async with httpx.AsyncClient(timeout=5) as client:
+                resp = await client.get(url)
+            if resp.status_code == 404:
+                raise DriverNotActiveError("Профиль водителя не найден")
+            resp.raise_for_status()
+            data = resp.json()
+            # status 1 = ACTIVE
+            if data.get("status") != 1:
+                raise DriverNotActiveError("Водитель заблокирован")
+        except httpx.HTTPError as exc:
+            logger.error("Driver status check failed for %s: %s", driver_id, exc)
+            raise DriverNotActiveError("Не удалось проверить статус водителя")
 
     # ── Клиент принимает предложение ───────────────────────────
 
