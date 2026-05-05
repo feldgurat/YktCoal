@@ -1,5 +1,5 @@
 from datetime import datetime
-
+from uuid import UUID
 from sqlmodel import SQLModel, Field
 
 
@@ -23,7 +23,7 @@ class UserRoleUpdate(SQLModel):
 
 
 class UserRead(SQLModel):
-    id: str
+    id: UUID
     name: str
     contact_number: str
     telegram_user_id: str | None

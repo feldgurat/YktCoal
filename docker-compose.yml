@@ -1,0 +1,91 @@
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  user-backend:
+    build: ./User
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./User:/app
+      - user_sqlite:/app/db
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./db/app.db
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=change-me-in-production
+      - DEFAULT_ADMIN_NAME=Admin
+      - DEFAULT_ADMIN_PHONE=+70000000000
+      - INTERNAL_SERVICE_KEY=change-me-in-production
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  driver-backend:
+    build: ./Driver
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./Driver:/app
+      - driver_sqlite:/app/db
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./db/drivers.db
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=change-me-in-production
+      - USER_SERVICE_URL=http://user-backend:8000
+      - INTERNAL_SERVICE_KEY=change-me-in-production
+    depends_on:
+      redis:
+        condition: service_healthy
+      user-backend:
+        condition: service_started
+
+  order-backend:
+    build: ./Order
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./Order:/app
+      - order_sqlite:/app/db
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./db/orders.db
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=change-me-in-production
+      - DRIVER_SERVICE_URL=http://driver-backend:8002
+    depends_on:
+      redis:
+        condition: service_healthy
+      driver-backend:
+        condition: service_started
+
+  telegram-bot:
+    build: ./SanyaBot
+    volumes:
+      - ./SanyaBot:/app
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN:-8565746519:AAFmvyISg5AbOe783GbBbSWjYnrfmrnKr6o}
+      - USER_SERVICE_URL=http://user-backend:8000
+      - ORDER_SERVICE_URL=http://order-backend:8001
+      - DRIVER_SERVICE_URL=http://driver-backend:8002
+    depends_on:
+      user-backend:
+        condition: service_started
+      order-backend:
+        condition: service_started
+      driver-backend:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+  user_sqlite:
+  driver_sqlite:
+  order_sqlite:

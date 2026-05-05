@@ -15,6 +15,7 @@ from data.repositories.AuthRepo import AuthRepository, AuthRepositoryDep
 from data.repositories.UserRepo import UserRepository, UserRepositoryDep
 from data.schemas.Auth import RegisterIn
 from services.Exeptions import (
+    AppException,
     InvalidTokenError,
     InvalidTokenTypeError,
     OtpInvalidError,
@@ -39,7 +40,7 @@ class AuthService:
         if digits.startswith("8") and len(digits) == 11:
             digits = "7" + digits[1:]
         if not digits.startswith("7") or len(digits) != 11:
-            raise ValueError("Некорректный номер телефона")
+            raise AppException("Некорректный номер телефона", status_code=400)
         return f"+{digits}"
 
     # ── OTP ────────────────────────────────────────────────────
@@ -78,12 +79,13 @@ class AuthService:
 
     # ── JWT ────────────────────────────────────────────────────
 
-    def create_access_token(self, user_id: str, token_version: int) -> str:
+    def create_access_token(self, user_id: str, token_version: int, roles: list[str]) -> str:
         now = datetime.now(timezone.utc)
         payload = {
             "sub": user_id,
             "type": "access",
             "ver": token_version,
+            "roles": roles,
             "jti": str(uuid.uuid4()),
             "iat": now,
             "exp": now + timedelta(minutes=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES),
@@ -117,9 +119,9 @@ class AuthService:
 
         return payload
 
-    def create_token_pair(self, user_id: str, token_version: int) -> tuple[str, str]:
+    def create_token_pair(self, user_id: str, token_version: int, roles: list[str]) -> tuple[str, str]:
         return (
-            self.create_access_token(user_id, token_version),
+            self.create_access_token(user_id, token_version, roles),
             self.create_refresh_token(user_id, token_version),
         )
 
@@ -152,7 +154,7 @@ class AuthService:
 
         await self.verify_otp(phone, code)
 
-        access, refresh = self.create_token_pair(str(user.id), user.token_version)
+        access, refresh = self.create_token_pair(str(user.id), user.token_version, user.role_names)
         return user, access, refresh
 
     async def refresh_tokens(self, raw_refresh_token: str) -> tuple[str, str]:
@@ -165,7 +167,7 @@ class AuthService:
         if await self.is_token_revoked(jti):
             raise TokenRevokedError()
 
-        user = await self._user_repo.get_by_id(user_id)
+        user = await self._user_repo.get_by_id(uuid.UUID(user_id))
         if user is None:
             raise UserNotFoundError()
 
@@ -175,7 +177,7 @@ class AuthService:
         await self.revoke_token(jti, payload["exp"])
         user.token_version += 1
 
-        return self.create_token_pair(str(user.id), user.token_version)
+        return self.create_token_pair(str(user.id), user.token_version, user.role_names)
 
     async def register(self, data: RegisterIn) -> tuple[User, str]:
         phone = self.normalize_phone(data.contact_number)
@@ -195,6 +197,14 @@ class AuthService:
 
         code = await self.send_otp(phone)
         return user, code
+    
+    async def logout(
+        self, access_payload: dict, refresh_token: str
+    ) -> None:
+        await self.revoke_token(access_payload["jti"], access_payload["exp"])
+
+        refresh_payload = self.decode_token(refresh_token, expected_type="refresh")
+        await self.revoke_token(refresh_payload["jti"], refresh_payload["exp"])
 
 
 def get_auth_service(

@@ -34,19 +34,23 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="App API", version="1.0.0", lifespan=lifespan)
 
-from api.v1.Auth import router as auth_router  # noqa: E402
-from api.v1.User import router as users_router  # noqa: E402
-from api.v1.Telegram import router as telegram_router  # noqa: E402
+from api.v1.Auth import router as auth_router
+from api.v1.User import router as users_router
+from api.v1.Telegram import router as telegram_router
+from api.v1.Debug import router as debug_router
+from api.v1.Internal import router as internal_router
 
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(telegram_router)
+app.include_router(debug_router)
+app.include_router(internal_router)
 
 from starlette.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # на проде замените на конкретные домены
+    allow_origins=["http://localhost:5173"],  # на проде замените на конкретные домены
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
