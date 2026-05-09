@@ -66,24 +66,6 @@ services:
       driver-backend:
         condition: service_started
 
-  telegram-bot:
-    build: ./SanyaBot
-    volumes:
-      - ./SanyaBot:/app
-    environment:
-      - BOT_TOKEN=${BOT_TOKEN:-8565746519:AAFmvyISg5AbOe783GbBbSWjYnrfmrnKr6o}
-      - USER_SERVICE_URL=http://user-backend:8000
-      - ORDER_SERVICE_URL=http://order-backend:8001
-      - DRIVER_SERVICE_URL=http://driver-backend:8002
-    depends_on:
-      user-backend:
-        condition: service_started
-      order-backend:
-        condition: service_started
-      driver-backend:
-        condition: service_started
-    restart: unless-stopped
-
 volumes:
   redis_data:
   user_sqlite:
