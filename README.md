@@ -9,3 +9,9 @@
 
 - Telegram bot: Аргунов Александр (San4eZ05)
 
+**Как запустить**
+
+- Клиентская часть:
+    - перейти в папку front
+    - npm install
+    - npm run dev
