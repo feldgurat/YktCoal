@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     DEFAULT_ADMIN_NAME: str = "Admin"
     DEFAULT_ADMIN_PHONE: str = "+70000000000"
 
+    INTERNAL_SERVICE_KEY: str = "change-me-in-production"
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
 

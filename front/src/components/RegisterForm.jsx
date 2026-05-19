@@ -6,7 +6,7 @@ import { AUTH } from '../api/endpoints'
 function RegisterForm({ onRegSuccess }) {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
-    const [tg, setTg] = useState('');
+    const [tg, setTg] = useState(null);
     const [address, setAddress] = useState('');
 
     const [loading, setLoading] = useState(false);
@@ -23,10 +23,12 @@ function RegisterForm({ onRegSuccess }) {
                 contact_number: phone, 
                 telegram_user_id: tg, 
                 address });
+
         onRegSuccess({ 
         ...response.data,   // то, что вернул бэкенд (может быть code, session_id и т.д.)
         userPhone: phone    // исходный номер, который ввёл пользователь
         });
+
         } catch (err) {
             const getErrorMessage = (error) => {
                 if (error.response) {
@@ -77,14 +79,14 @@ return (
             required
             className='font-montserrat bg-gray-200 p-1 rounded-[3px] focus:outline-none focus:ring-0'
         />
-        <input
+        {/* <input
             type="text"
             value={tg}
             onChange={(e) => setTg(e.target.value)}
             placeholder="Введите TG USER ID"
             required
             className='font-montserrat bg-gray-200 p-1 rounded-[3px] focus:outline-none focus:ring-0'
-        />
+        /> */}
         <input
             type="text"
             value={address}
@@ -98,7 +100,6 @@ return (
             {loading ? 'Регистрация...' : 'Зарегистрироваться'}
         </button>
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        <Link className='font-montserrat' to="/">Вернуться</Link>
     </form>
 );
 }
