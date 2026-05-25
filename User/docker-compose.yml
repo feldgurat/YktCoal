@@ -19,12 +19,6 @@ services:
     volumes:
       - .:/app
       - sqlite_data:/app/db
-    environment:
-      - DATABASE_URL=sqlite+aiosqlite:///./db/app.db
-      - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET=change-me-in-production
-      - DEFAULT_ADMIN_NAME=Admin
-      - DEFAULT_ADMIN_PHONE=+70000000000
     depends_on:
       redis:
         condition: service_healthy

@@ -2,8 +2,8 @@ from enum import IntFlag
 
 
 class Role(IntFlag):
-    USER = 1    # bit 0
-    ADMIN = 2   # bit 1
+    USER = 1  # bit 0
+    ADMIN = 2  # bit 1
     DRIVER = 4  # bit 2
 
 
@@ -14,6 +14,7 @@ ROLE_MAP: dict[str, Role] = {
 }
 
 ROLE_NAMES: dict[Role, str] = {v: k for k, v in ROLE_MAP.items()}
+
 
 class RoleHelpers:
     @staticmethod

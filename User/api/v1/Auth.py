@@ -1,10 +1,6 @@
-from fastapi import Cookie
-from fastapi.responses import JSONResponse
-from fastapi import APIRouter, HTTPException, status
-from fastapi.responses import JSONResponse
+from typing import Annotated
 
-from api.v1.dependencies import UserWithPayload
-from api.routes import API_V1_PREFIX, AUTH
+from config import settings
 from data.schemas.Auth import (
     AccessTokenOut,
     RegisterIn,
@@ -13,8 +9,12 @@ from data.schemas.Auth import (
     SmsVerifyIn,
     StatusOut,
 )
+from fastapi import APIRouter, Cookie, HTTPException, Header, Response, status
 from services.AuthService import AuthServiceDep
 from services.Exeptions import AppException
+
+from api.routes import API_V1_PREFIX, AUTH
+from api.v1.dependencies import UserWithPayload
 
 router = APIRouter(prefix=f"{API_V1_PREFIX}{AUTH}", tags=["Auth"])
 
@@ -24,88 +24,85 @@ async def request_sign_in_code(data: SmsRequestIn, auth_service: AuthServiceDep)
     try:
         code = await auth_service.request_sign_in_code(data.phone)
     except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
 
     # TODO: убрать debug_code перед продакшеном
     return {"status": "ok", "message": "Код отправлен", "debug_code": code}
 
 
-
 @router.post("/sign-in-code-answer", response_model=AccessTokenOut)
-async def verify_sign_in_code(data: SmsVerifyIn, auth_service: AuthServiceDep):
+async def verify_sign_in_code(data: SmsVerifyIn, auth_service: AuthServiceDep, response: Response):
     try:
-        _user, access, refresh = await auth_service.verify_sign_in_code(
-            data.phone, data.code
-        )
+        _user, access, refresh = await auth_service.verify_sign_in_code(data.phone, data.code)
     except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
 
-    response = JSONResponse(content={"access_token": access})
     response.set_cookie(
         key="refresh_token",
         value=refresh,
         httponly=True,
-        secure=False,           # False для localhost без HTTPS
+        secure=settings.COOKIE_SECURE,
         samesite="strict",
-        path=f"{API_V1_PREFIX}{AUTH}",      # cookie летит только на auth-эндпоинты
-        max_age=7 * 24 * 3600, # 7 дней
+        path=f"{API_V1_PREFIX}{AUTH}",  # cookie летит только на auth-эндпоинты
+        max_age=7 * 24 * 3600,  # 7 дней
     )
-    return response
-
+    return AccessTokenOut(access_token=access)
 
 
 @router.post("/refresh", response_model=AccessTokenOut)
 async def refresh_tokens(
     auth_service: AuthServiceDep,
+    response: Response,
     refresh_token: str = Cookie(...),
 ):
     try:
         access, new_refresh = await auth_service.refresh_tokens(refresh_token)
     except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
 
-    response = JSONResponse(content={"access_token": access})
     response.set_cookie(
         key="refresh_token",
         value=new_refresh,
         httponly=True,
-        secure=False,
+        secure=settings.COOKIE_SECURE,
         samesite="strict",
         path=f"{API_V1_PREFIX}{AUTH}",
         max_age=7 * 24 * 3600,
     )
-    return response
+    return AccessTokenOut(access_token=access)
 
-@router.post(
-    "/register", response_model=RegisterOut, status_code=status.HTTP_201_CREATED
-)
+
+@router.post("/register", response_model=RegisterOut, status_code=status.HTTP_201_CREATED)
 async def register(data: RegisterIn, auth_service: AuthServiceDep):
     try:
         _user, code = await auth_service.register(data)
     except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
 
     # TODO: убрать code перед продакшеном
-    return RegisterOut(
-        success=True, message=f"Пользователь создан. Код отправлен. {code}"
-    )
+    return RegisterOut(success=True, message=f"Пользователь создан. Код отправлен. {code}")
 
- 
 
- 
 @router.post("/logout", response_model=StatusOut)
 async def logout(
     auth_service: AuthServiceDep,
-    user_and_payload: UserWithPayload,
-    refresh_token: str = Cookie(...),
+    response: Response,
+    refresh_token: Annotated[str | None, Cookie()] = None,
+    authorization: Annotated[str | None, Header()] = None,
 ):
-    _, payload = user_and_payload
-    try:
-        await auth_service.logout(payload, refresh_token)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+    """
+    Выход из системы. Отзывает токены если возможно,
+    удаляет cookie всегда.
+    """
+    access_payload = None
+    if authorization and authorization.lower().startswith("bearer "):
+        token = authorization[7:]
+        try:
+            access_payload = auth_service.decode_token(token, expected_type="access")
+        except AppException:
+            pass
 
-    response = JSONResponse(content={"status": "ok"})
+    await auth_service.logout(access_payload, refresh_token)
+
     response.delete_cookie("refresh_token", path=f"{API_V1_PREFIX}{AUTH}")
-    return response
- 
+    return StatusOut(status="ok")

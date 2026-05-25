@@ -1,11 +1,10 @@
 import logging
 
-from sqlmodel import select
-from sqlmodel.ext.asyncio.session import AsyncSession
-
 from config import settings
 from data.entities.Role import Role
 from data.entities.User import User
+from sqlmodel import select
+from sqlmodel.ext.asyncio.session import AsyncSession
 
 logger = logging.getLogger(__name__)
 

@@ -1,11 +1,17 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
-
+from api.v1.Auth import router as auth_router
+from api.v1.Debug import router as debug_router
+from api.v1.Internal import router as internal_router
+from api.v1.Telegram import router as telegram_router
+from api.v1.User import router as users_router
+from config import settings
 from data.Database import async_session_factory, create_tables, engine
 from data.Redis import close_redis, init_redis
+from fastapi import FastAPI
 from services.Startup import create_default_admin
+from starlette.middleware.cors import CORSMiddleware
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -34,11 +40,6 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="App API", version="1.0.0", lifespan=lifespan)
 
-from api.v1.Auth import router as auth_router
-from api.v1.User import router as users_router
-from api.v1.Telegram import router as telegram_router
-from api.v1.Debug import router as debug_router
-from api.v1.Internal import router as internal_router
 
 app.include_router(auth_router)
 app.include_router(users_router)
@@ -46,15 +47,15 @@ app.include_router(telegram_router)
 app.include_router(debug_router)
 app.include_router(internal_router)
 
-from starlette.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # на проде замените на конкретные домены
+    allow_origins=settings.CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 @app.get("/health")
 async def health():

@@ -1,11 +1,12 @@
-from typing import Annotated, Sequence
-
-from fastapi import Depends
+from collections.abc import Sequence
+from typing import Annotated
 
 from data.entities.Role import RoleHelpers
 from data.entities.User import User
 from data.repositories.UserRepo import UserRepository, UserRepositoryDep
 from data.schemas.User import UserCreate, UserRead, UserUpdate
+from fastapi import Depends
+
 from services.Exeptions import InvalidRoleError, UserAlreadyExistsError, UserNotFoundError
 
 
@@ -44,24 +45,27 @@ class UserService:
         try:
             return await self._repo.get_by_role(role_name)
         except ValueError:
-            raise InvalidRoleError(f"Неизвестная роль: {role_name}")
+            raise InvalidRoleError(f"Неизвестная роль: {role_name}") from None
 
     async def get_by_contact_number(self, phone: str) -> User | None:
         return await self._repo.get_by_contact_number(phone)
+    
+    async def get_by_telegram_user_id(self, telegram_user_id: str) -> User | None:
+        return await self._repo.get_by_telegram_user_id(telegram_user_id)
 
-    async def create(self, data: UserCreate, phone_normalized: str) -> User:
-        existing = await self._repo.get_by_contact_number(phone_normalized)
+    async def create(self, data: UserCreate) -> User:
+        existing = await self._repo.get_by_contact_number(data.contact_number)
         if existing is not None:
             raise UserAlreadyExistsError()
 
         try:
             role_mask = RoleHelpers.names_to_mask(data.roles)
         except ValueError as e:
-            raise InvalidRoleError(str(e))
+            raise InvalidRoleError(str(e)) from e
 
         user = User(
             name=data.name,
-            contact_number=phone_normalized,
+            contact_number=data.contact_number,
             telegram_user_id=data.telegram_user_id,
             address=data.address,
             roles=role_mask,
@@ -83,18 +87,18 @@ class UserService:
         user = await self.get(user_id)
         try:
             user.add_role(role_name)
-            self._repo._session.flush()
+            await self._repo.flush()
         except ValueError:
-            raise InvalidRoleError(f"Неизвестная роль: {role_name}")
+            raise InvalidRoleError(f"Неизвестная роль: {role_name}") from None
         return user
 
     async def remove_role(self, user_id: str, role_name: str) -> User:
         user = await self.get(user_id)
         try:
             user.remove_role(role_name)
-            self._repo._session.flush()
+            await self._repo.flush()
         except ValueError:
-            raise InvalidRoleError(f"Неизвестная роль: {role_name}")
+            raise InvalidRoleError(f"Неизвестная роль: {role_name}") from None
         return user
 
 

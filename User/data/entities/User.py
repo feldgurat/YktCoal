@@ -1,18 +1,15 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from data.entities.Role import RoleHelpers
 from sqlmodel import Field, SQLModel
 
+from data.entities.Role import RoleHelpers
 
 
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
-    id: uuid.UUID = Field(
-        default_factory=uuid.uuid4,
-        primary_key=True
-    )
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(max_length=255)
     contact_number: str = Field(max_length=20, unique=True, index=True)
     telegram_user_id: str | None = Field(default=None)
@@ -20,12 +17,8 @@ class User(SQLModel, table=True):
     roles: int = Field(default=0)
     token_version: int = Field(default=0)
     is_active: bool = Field(default=True)
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
-    updated_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
+    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    updated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
 
     # ── Role helpers ───────────────────────────────────────────
 

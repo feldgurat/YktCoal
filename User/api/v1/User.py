@@ -1,12 +1,11 @@
+from data.schemas.Common import MessageResponse
+from data.schemas.User import UserCreate, UserRead, UserRoleUpdate, UserUpdate
 from fastapi import APIRouter, Depends, HTTPException
+from services.Exeptions import AppException
+from services.UserService import UserService, UserServiceDep
 
 from api.routes import API_V1_PREFIX, USERS
 from api.v1.dependencies import CurrentAdminDep, CurrentUserDep, get_current_user
-from data.schemas.Common import MessageResponse
-from data.schemas.User import UserCreate, UserRead, UserRoleUpdate, UserUpdate
-from services.AuthService import AuthService
-from services.Exeptions import AppException
-from services.UserService import UserService, UserServiceDep
 
 router = APIRouter(
     prefix=f"{API_V1_PREFIX}{USERS}",
@@ -18,6 +17,7 @@ _r = UserService.to_read
 
 
 # ── Current user ───────────────────────────────────────────────
+
 
 @router.get("/me", response_model=UserRead)
 async def get_my_profile(current_user: CurrentUserDep):
@@ -33,11 +33,12 @@ async def update_my_profile(
     try:
         user = await user_service.update(current_user.id, data)
     except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
     return _r(user)
 
 
 # ── Admin-only ─────────────────────────────────────────────────
+
 
 @router.post("", response_model=UserRead, status_code=201)
 async def create_user(
@@ -46,34 +47,33 @@ async def create_user(
     _admin: CurrentAdminDep,
 ):
     try:
-        phone = AuthService.normalize_phone(data.contact_number)
-        user = await user_service.create(data, phone)
+        user = await user_service.create(data)
     except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
     return _r(user)
 
 
 @router.get("", response_model=list[UserRead])
-async def get_users(user_service: UserServiceDep):
+async def get_users(user_service: UserServiceDep, _admin: CurrentAdminDep):
     users = await user_service.get_list()
     return [_r(u) for u in users]
 
 
 @router.get("/by-role/{role}", response_model=list[UserRead])
-async def get_users_by_role(role: str, user_service: UserServiceDep):
+async def get_users_by_role(role: str, user_service: UserServiceDep, _admin: CurrentAdminDep):
     try:
         users = await user_service.get_by_role(role)
     except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
     return [_r(u) for u in users]
 
 
 @router.get("/{user_id}", response_model=UserRead)
-async def get_user(user_id: str, user_service: UserServiceDep):
+async def get_user(user_id: str, user_service: UserServiceDep, _admin: CurrentAdminDep):
     try:
         user = await user_service.get(user_id)
     except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
     return _r(user)
 
 
@@ -87,7 +87,7 @@ async def update_user(
     try:
         user = await user_service.update(user_id, data)
     except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
     return _r(user)
 
 
@@ -113,7 +113,7 @@ async def add_role(
     try:
         user = await user_service.add_role(user_id, data.role)
     except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
     return _r(user)
 
 
@@ -127,5 +127,5 @@ async def remove_role(
     try:
         user = await user_service.remove_role(user_id, role)
     except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message)
+        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
     return _r(user)

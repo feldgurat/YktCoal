@@ -2,18 +2,18 @@ import hashlib
 import re
 import secrets
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 import jwt
-from fastapi import Depends
-
 from config import settings
 from data.entities.Role import Role
 from data.entities.User import User
 from data.repositories.AuthRepo import AuthRepository, AuthRepositoryDep
 from data.repositories.UserRepo import UserRepository, UserRepositoryDep
 from data.schemas.Auth import RegisterIn
+from fastapi import Depends
+
 from services.Exeptions import (
     AppException,
     InvalidTokenError,
@@ -32,22 +32,12 @@ class AuthService:
         self._auth_repo = auth_repo
         self._user_repo = user_repo
 
-    # ── Phone ──────────────────────────────────────────────────
-
-    @staticmethod
-    def normalize_phone(raw: str) -> str:
-        digits = re.sub(r"\D", "", raw)
-        if digits.startswith("8") and len(digits) == 11:
-            digits = "7" + digits[1:]
-        if not digits.startswith("7") or len(digits) != 11:
-            raise AppException("Некорректный номер телефона", status_code=400)
-        return f"+{digits}"
 
     # ── OTP ────────────────────────────────────────────────────
 
     @staticmethod
     def generate_code() -> str:
-        upper = 10 ** settings.OTP_CODE_LENGTH - 1
+        upper = 10**settings.OTP_CODE_LENGTH - 1
         return str(secrets.randbelow(upper)).zfill(settings.OTP_CODE_LENGTH)
 
     @staticmethod
@@ -80,7 +70,7 @@ class AuthService:
     # ── JWT ────────────────────────────────────────────────────
 
     def create_access_token(self, user_id: str, token_version: int, roles: list[str]) -> str:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "sub": user_id,
             "type": "access",
@@ -93,7 +83,7 @@ class AuthService:
         return jwt.encode(payload, settings.JWT_SECRET, algorithm=settings.JWT_ALGORITHM)
 
     def create_refresh_token(self, user_id: str, token_version: int) -> str:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         payload = {
             "sub": user_id,
             "type": "refresh",
@@ -106,20 +96,20 @@ class AuthService:
 
     def decode_token(self, token: str, expected_type: str) -> dict[str, Any]:
         try:
-            payload = jwt.decode(
-                token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
-            )
+            payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
         except jwt.ExpiredSignatureError:
-            raise TokenExpiredError()
+            raise TokenExpiredError() from None
         except jwt.InvalidTokenError:
-            raise InvalidTokenError()
+            raise InvalidTokenError() from None
 
         if payload.get("type") != expected_type:
             raise InvalidTokenTypeError()
 
         return payload
 
-    def create_token_pair(self, user_id: str, token_version: int, roles: list[str]) -> tuple[str, str]:
+    def create_token_pair(
+        self, user_id: str, token_version: int, roles: list[str]
+    ) -> tuple[str, str]:
         return (
             self.create_access_token(user_id, token_version, roles),
             self.create_refresh_token(user_id, token_version),
@@ -131,29 +121,26 @@ class AuthService:
         return await self._auth_repo.is_token_blacklisted(jti)
 
     async def revoke_token(self, jti: str, exp_ts: int) -> None:
-        now_ts = int(datetime.now(timezone.utc).timestamp())
+        now_ts = int(datetime.now(UTC).timestamp())
         ttl = max(exp_ts - now_ts, 1)
         await self._auth_repo.blacklist_token(jti, ttl)
 
     # ── High-level flows ───────────────────────────────────────
 
-    async def request_sign_in_code(self, raw_phone: str) -> str:
-        phone = self.normalize_phone(raw_phone)
+    async def request_sign_in_code(self, phone: str) -> str:
         user = await self._user_repo.get_by_contact_number(phone)
         if user is None:
             raise UserNotFoundError("Пользователя с таким номером нет в системе")
         return await self.send_otp(phone)
 
     async def verify_sign_in_code(
-        self, raw_phone: str, code: str
+        self, phone: str, code: str
     ) -> tuple[User, str, str]:
-        phone = self.normalize_phone(raw_phone)
         user = await self._user_repo.get_by_contact_number(phone)
         if user is None:
             raise UserNotFoundError()
 
         await self.verify_otp(phone, code)
-
         access, refresh = self.create_token_pair(str(user.id), user.token_version, user.role_names)
         return user, access, refresh
 
@@ -180,36 +167,42 @@ class AuthService:
         return self.create_token_pair(str(user.id), user.token_version, user.role_names)
 
     async def register(self, data: RegisterIn) -> tuple[User, str]:
-        phone = self.normalize_phone(data.contact_number)
-
-        existing = await self._user_repo.get_by_contact_number(phone)
+        existing = await self._user_repo.get_by_contact_number(data.contact_number)
         if existing is not None:
             raise UserAlreadyExistsError()
 
         user = User(
             name=data.name,
-            contact_number=phone,
+            contact_number=data.contact_number,
             telegram_user_id=data.telegram_user_id,
             address=data.address,
             roles=int(Role.USER),
         )
         await self._user_repo.create(user)
 
-        code = await self.send_otp(phone)
+        code = await self.send_otp(data.contact_number)
         return user, code
-    
+
     async def logout(
-        self, access_payload: dict, refresh_token: str
+        self, access_payload: dict | None, refresh_token: str | None
     ) -> None:
-        await self.revoke_token(access_payload["jti"], access_payload["exp"])
+        """
+        Отзывает access и refresh токены, если они валидны.+
+        """
+        if access_payload is not None:
+            try:
+                await self.revoke_token(access_payload["jti"], access_payload["exp"])
+            except (KeyError, Exception):
+                pass
 
-        refresh_payload = self.decode_token(refresh_token, expected_type="refresh")
-        await self.revoke_token(refresh_payload["jti"], refresh_payload["exp"])
+        if refresh_token:
+            try:
+                refresh_payload = self.decode_token(refresh_token, expected_type="refresh")
+                await self.revoke_token(refresh_payload["jti"], refresh_payload["exp"])
+            except AppException:
+                pass
 
-
-def get_auth_service(
-    auth_repo: AuthRepositoryDep, user_repo: UserRepositoryDep
-) -> AuthService:
+def get_auth_service(auth_repo: AuthRepositoryDep, user_repo: UserRepositoryDep) -> AuthService:
     return AuthService(auth_repo, user_repo)
 
 
