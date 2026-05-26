@@ -2,9 +2,10 @@ import uuid
 from collections.abc import Callable
 from typing import Annotated, Any
 
-from data.entities.User import User
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from data.entities.User import User
 from services.AuthService import AuthServiceDep
 from services.Exeptions import AppException
 from services.UserService import UserServiceDep

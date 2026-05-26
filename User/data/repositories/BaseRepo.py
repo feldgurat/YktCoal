@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import TypeVar
@@ -17,7 +18,7 @@ class BaseRepository[T: SQLModel]:
         """Сбросить накопленные изменения в БД"""
         await self._session.flush()
 
-    async def get_by_id(self, entity_id: str) -> T | None:
+    async def get_by_id(self, entity_id: str | uuid.UUID) -> T | None:
         return await self._session.get(self._model, entity_id)
 
     async def get_all(self) -> Sequence[T]:
@@ -29,7 +30,7 @@ class BaseRepository[T: SQLModel]:
         await self._session.flush()
         return entity
 
-    async def update(self, entity_id: str, data: SQLModel) -> T | None:
+    async def update(self, entity_id: str | uuid.UUID, data: SQLModel) -> T | None:
         ent = await self.get_by_id(entity_id)
         if ent is None:
             return None
@@ -39,7 +40,7 @@ class BaseRepository[T: SQLModel]:
         await self._session.flush()
         return ent
 
-    async def delete(self, entity_id: str) -> bool:
+    async def delete(self, entity_id: str | uuid.UUID) -> bool:
         ent = await self.get_by_id(entity_id)
         if ent is None:
             return False

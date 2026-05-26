@@ -1,9 +1,9 @@
 from uuid import UUID
 
 from pydantic import field_validator
-
-from User.data.validators import normalize_phone
 from sqlmodel import Field, SQLModel
+
+from data.validators import normalize_phone
 
 
 class UserCreate(SQLModel):

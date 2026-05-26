@@ -1,10 +1,9 @@
-from config import settings
-from data.schemas.User import UserRead
 from fastapi import APIRouter, Depends, Header, HTTPException, status
-from services.Exeptions import AppException
-from services.UserService import UserService, UserServiceDep
 
 from api.routes import API_V1_PREFIX
+from config import settings
+from data.schemas.User import UserRead
+from services.UserService import UserService, UserServiceDep
 
 _r = UserService.to_read
 
@@ -33,10 +32,7 @@ async def internal_add_role(
     user_service: UserServiceDep,
 ):
     """Внутренний эндпоинт: добавить роль пользователю. Защищён сервисным ключом."""
-    try:
-        user = await user_service.add_role(user_id, role)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+    user = await user_service.add_role(user_id, role)
     return _r(user)
 
 
@@ -47,8 +43,5 @@ async def internal_remove_role(
     user_service: UserServiceDep,
 ):
     """Внутренний эндпоинт: убрать роль у пользователя. Защищён сервисным ключом."""
-    try:
-        user = await user_service.remove_role(user_id, role)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+    user = await user_service.remove_role(user_id, role)
     return _r(user)

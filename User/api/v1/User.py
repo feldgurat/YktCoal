@@ -1,11 +1,10 @@
-from data.schemas.Common import MessageResponse
-from data.schemas.User import UserCreate, UserRead, UserRoleUpdate, UserUpdate
-from fastapi import APIRouter, Depends, HTTPException
-from services.Exeptions import AppException
-from services.UserService import UserService, UserServiceDep
+from fastapi import APIRouter, Depends
 
 from api.routes import API_V1_PREFIX, USERS
 from api.v1.dependencies import CurrentAdminDep, CurrentUserDep, get_current_user
+from data.schemas.Common import MessageResponse
+from data.schemas.User import UserCreate, UserRead, UserRoleUpdate, UserUpdate
+from services.UserService import UserService, UserServiceDep
 
 router = APIRouter(
     prefix=f"{API_V1_PREFIX}{USERS}",
@@ -30,10 +29,7 @@ async def update_my_profile(
     current_user: CurrentUserDep,
     user_service: UserServiceDep,
 ):
-    try:
-        user = await user_service.update(current_user.id, data)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+    user = await user_service.update(current_user.id, data)
     return _r(user)
 
 
@@ -46,10 +42,7 @@ async def create_user(
     user_service: UserServiceDep,
     _admin: CurrentAdminDep,
 ):
-    try:
-        user = await user_service.create(data)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from exc
+    user = await user_service.create(data)
     return _r(user)
 
 
@@ -61,19 +54,14 @@ async def get_users(user_service: UserServiceDep, _admin: CurrentAdminDep):
 
 @router.get("/by-role/{role}", response_model=list[UserRead])
 async def get_users_by_role(role: str, user_service: UserServiceDep, _admin: CurrentAdminDep):
-    try:
-        users = await user_service.get_by_role(role)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+    users = await user_service.get_by_role(role)
+
     return [_r(u) for u in users]
 
 
 @router.get("/{user_id}", response_model=UserRead)
 async def get_user(user_id: str, user_service: UserServiceDep, _admin: CurrentAdminDep):
-    try:
-        user = await user_service.get(user_id)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+    user = await user_service.get(user_id)
     return _r(user)
 
 
@@ -84,10 +72,7 @@ async def update_user(
     user_service: UserServiceDep,
     _admin: CurrentAdminDep,
 ):
-    try:
-        user = await user_service.update(user_id, data)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+    user = await user_service.update(user_id, data)
     return _r(user)
 
 
@@ -110,10 +95,7 @@ async def add_role(
     user_service: UserServiceDep,
     _admin: CurrentAdminDep,
 ):
-    try:
-        user = await user_service.add_role(user_id, data.role)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+    user = await user_service.add_role(user_id, data.role)
     return _r(user)
 
 
@@ -124,8 +106,5 @@ async def remove_role(
     user_service: UserServiceDep,
     _admin: CurrentAdminDep,
 ):
-    try:
-        user = await user_service.remove_role(user_id, role)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+    user = await user_service.remove_role(user_id, role)
     return _r(user)

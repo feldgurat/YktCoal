@@ -17,8 +17,8 @@ class User(SQLModel, table=True):
     roles: int = Field(default=0)
     token_version: int = Field(default=0)
     is_active: bool = Field(default=True)
-    created_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
-    updated_at: str = Field(default_factory=lambda: datetime.now(UTC).isoformat())
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
     # ── Role helpers ───────────────────────────────────────────
 

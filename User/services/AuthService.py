@@ -1,19 +1,19 @@
 import hashlib
-import re
+import logging
 import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Annotated, Any
 
 import jwt
+from fastapi import Depends
+
 from config import settings
 from data.entities.Role import Role
 from data.entities.User import User
 from data.repositories.AuthRepo import AuthRepository, AuthRepositoryDep
 from data.repositories.UserRepo import UserRepository, UserRepositoryDep
 from data.schemas.Auth import RegisterIn
-from fastapi import Depends
-
 from services.Exeptions import (
     AppException,
     InvalidTokenError,
@@ -26,12 +26,13 @@ from services.Exeptions import (
     UserNotFoundError,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class AuthService:
     def __init__(self, auth_repo: AuthRepository, user_repo: UserRepository) -> None:
         self._auth_repo = auth_repo
         self._user_repo = user_repo
-
 
     # ── OTP ────────────────────────────────────────────────────
 
@@ -133,9 +134,7 @@ class AuthService:
             raise UserNotFoundError("Пользователя с таким номером нет в системе")
         return await self.send_otp(phone)
 
-    async def verify_sign_in_code(
-        self, phone: str, code: str
-    ) -> tuple[User, str, str]:
+    async def verify_sign_in_code(self, phone: str, code: str) -> tuple[User, str, str]:
         user = await self._user_repo.get_by_contact_number(phone)
         if user is None:
             raise UserNotFoundError()
@@ -183,17 +182,15 @@ class AuthService:
         code = await self.send_otp(data.contact_number)
         return user, code
 
-    async def logout(
-        self, access_payload: dict | None, refresh_token: str | None
-    ) -> None:
+    async def logout(self, access_payload: dict | None, refresh_token: str | None) -> None:
         """
         Отзывает access и refresh токены, если они валидны.+
         """
         if access_payload is not None:
             try:
                 await self.revoke_token(access_payload["jti"], access_payload["exp"])
-            except (KeyError, Exception):
-                pass
+            except Exception:
+                logger.warning("Failed to revoke access token during logout", exc_info=True)
 
         if refresh_token:
             try:
@@ -201,6 +198,7 @@ class AuthService:
                 await self.revoke_token(refresh_payload["jti"], refresh_payload["exp"])
             except AppException:
                 pass
+
 
 def get_auth_service(auth_repo: AuthRepositoryDep, user_repo: UserRepositoryDep) -> AuthService:
     return AuthService(auth_repo, user_repo)

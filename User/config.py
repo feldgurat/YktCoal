@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     DEFAULT_ADMIN_PHONE: str
 
     INTERNAL_SERVICE_KEY: str
+    INTERNAL_TELEGRAM_SERVICE_KEY: str
     CORS_ALLOWED_ORIGINS: list[str]
     COOKIE_SECURE: bool = False
 

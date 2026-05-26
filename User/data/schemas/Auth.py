@@ -1,7 +1,7 @@
 from pydantic import field_validator
-
-from User.data.validators import normalize_phone
 from sqlmodel import Field, SQLModel
+
+from data.validators import normalize_phone
 
 
 class SmsRequestIn(SQLModel):
@@ -27,7 +27,7 @@ class RegisterIn(SQLModel):
     name: str = Field(min_length=1, max_length=255)
     contact_number: str = Field(min_length=10, max_length=20)
     telegram_user_id: str | None = None
-    address: str | None = None
+    address: str | None = Field(max_length=512)
 
     @field_validator("contact_number")
     @classmethod
@@ -41,7 +41,6 @@ class AccessTokenOut(SQLModel):
 
 class StatusOut(SQLModel):
     status: str
-
 
 
 class RegisterOut(SQLModel):

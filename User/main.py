@@ -1,6 +1,10 @@
 import logging
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from starlette.middleware.cors import CORSMiddleware
+
 from api.v1.Auth import router as auth_router
 from api.v1.Debug import router as debug_router
 from api.v1.Internal import router as internal_router
@@ -9,9 +13,8 @@ from api.v1.User import router as users_router
 from config import settings
 from data.Database import async_session_factory, create_tables, engine
 from data.Redis import close_redis, init_redis
-from fastapi import FastAPI
+from services.Exeptions import AppException
 from services.Startup import create_default_admin
-from starlette.middleware.cors import CORSMiddleware
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -39,6 +42,23 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="App API", version="1.0.0", lifespan=lifespan)
+
+
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.message},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception", exc_info=exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Внутренняя ошибка сервера"},
+    )
 
 
 app.include_router(auth_router)

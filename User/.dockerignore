@@ -1,7 +1,8 @@
 __pycache__
 *.pyc
 .env
-db/
 .git
 .gitignore
 *.md
+.venv
+.pytest_cache

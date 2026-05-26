@@ -1,9 +1,9 @@
 from typing import Annotated
 
 import redis.asyncio as redis
-from config import settings
 from fastapi import Depends
 
+from config import settings
 from data.Redis import get_redis
 
 

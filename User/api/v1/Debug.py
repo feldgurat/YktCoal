@@ -1,13 +1,13 @@
-from data.Database import async_session_factory, engine
-from data.schemas.Common import MessageResponse
 from fastapi import APIRouter
-from services.Startup import create_default_admin
 from sqlmodel import SQLModel
 
 from api.routes import ADMIN, API_V1_PREFIX
 from api.v1.dependencies import CurrentAdminDep
+from data.Database import async_session_factory, engine
+from data.schemas.Common import MessageResponse
+from services.Startup import create_default_admin
 
-router = APIRouter(prefix=f"{API_V1_PREFIX}{ADMIN}", tags=["Auth"])
+router = APIRouter(prefix=f"{API_V1_PREFIX}{ADMIN}", tags=["Debug"])
 
 
 @router.post("/reset-database", response_model=MessageResponse)

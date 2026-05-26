@@ -1,12 +1,12 @@
 from collections.abc import Sequence
 from typing import Annotated
 
+from fastapi import Depends
+
 from data.entities.Role import RoleHelpers
 from data.entities.User import User
 from data.repositories.UserRepo import UserRepository, UserRepositoryDep
 from data.schemas.User import UserCreate, UserRead, UserUpdate
-from fastapi import Depends
-
 from services.Exeptions import InvalidRoleError, UserAlreadyExistsError, UserNotFoundError
 
 
@@ -49,7 +49,7 @@ class UserService:
 
     async def get_by_contact_number(self, phone: str) -> User | None:
         return await self._repo.get_by_contact_number(phone)
-    
+
     async def get_by_telegram_user_id(self, telegram_user_id: str) -> User | None:
         return await self._repo.get_by_telegram_user_id(telegram_user_id)
 

@@ -1,114 +1,82 @@
-from data.schemas.Auth import RegisterIn, RegisterOut, SmsRequestIn, SmsVerifyIn
-from data.schemas.User import UserRead
-from fastapi import APIRouter, HTTPException
-from services.AuthService import AuthServiceDep
-from services.Exeptions import AppException
-from services.UserService import UserService, UserServiceDep
+from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlmodel import SQLModel
 
 from api.routes import API_V1_PREFIX, TELEGRAM
+from config import settings
+from data.entities.Role import Role
+from data.entities.User import User
+from data.repositories.UserRepo import UserRepositoryDep
+from data.schemas.User import UserRead
+from services.Exeptions import UserAlreadyExistsError, UserNotFoundError
+from services.UserService import UserService, UserServiceDep
 
-router = APIRouter(prefix=f"{API_V1_PREFIX}{TELEGRAM}", tags=["Telegram"])
+
+async def verify_bot_key(
+    x_service_key: str = Header(..., alias="X-Service-Key"),
+) -> None:
+    if x_service_key != settings.INTERNAL_TELEGRAM_SERVICE_KEY:
+        raise HTTPException(status_code=403, detail="Неверный сервисный ключ")
+
+
+router = APIRouter(
+    prefix=f"{API_V1_PREFIX}{TELEGRAM}",
+    tags=["Telegram"],
+    dependencies=[Depends(verify_bot_key)],
+)
 
 _r = UserService.to_read
 
 
-# ── Schemas ────────────────────────────────────────────────────
+class TgRegisterIn(SQLModel):
+    telegram_user_id: str
+    phone: str
+    name: str
+    address: str | None = None
 
 
-class TelegramTokensOut(SQLModel):
-    access_token: str
-    refresh_token: str
+class TgLinkIn(SQLModel):
+    telegram_user_id: str
+    phone: str
 
 
-class TelegramRefreshIn(SQLModel):
-    refresh_token: str
-
-
-class TelegramUserCheck(SQLModel):
-    exists: bool
-    user: UserRead | None = None
-
-
-
-
-@router.get("/check/{telegram_user_id}", response_model=TelegramUserCheck)
-async def check_telegram_user(
-    telegram_user_id: str,
-    user_service: UserServiceDep,
-):
-    """Проверить, зарегистрирован ли пользователь по Telegram ID."""
+@router.get("/by-tg-id/{telegram_user_id}", response_model=UserRead | None)
+async def find_by_tg_id(telegram_user_id: str, user_service: UserServiceDep):
+    """Знаем ли мы этого Telegram-пользователя? Возвращает null если нет."""
     user = await user_service.get_by_telegram_user_id(telegram_user_id)
-    if user is None:
-        return TelegramUserCheck(exists=False)
-    return TelegramUserCheck(exists=True, user=_r(user))
+    return _r(user) if user else None
 
 
-# ── Register via Telegram ──────────────────────────────────────
+@router.get("/by-phone/{phone}", response_model=UserRead | None)
+async def find_by_phone(phone: str, user_service: UserServiceDep):
+    """Есть ли пользователь с таким телефоном (например, зарегался через веб)."""
+    user = await user_service.get_by_contact_number(phone)
+    return _r(user) if user else None
 
 
-@router.post("/register", response_model=RegisterOut, status_code=201)
-async def telegram_register(data: RegisterIn, auth_service: AuthServiceDep):
-    """Регистрация через Telegram. Возвращает debug_code для разработки."""
-    try:
-        _user, code = await auth_service.register(data)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
+@router.post("/register", response_model=UserRead, status_code=201)
+async def tg_register(data: TgRegisterIn, user_repo: UserRepositoryDep):
+    """Регистрация через бот. Телефон уже верифицирован Telegram'ом, OTP не нужен."""
+    existing = await user_repo.get_by_contact_number(data.phone)
+    if existing is not None:
+        raise UserAlreadyExistsError()
 
-    # TODO: убрать debug_code перед продакшеном
-    return RegisterOut(
-        success=True,
-        message=f"Пользователь создан через Telegram. Код: {code}",
+    user = User(
+        name=data.name,
+        contact_number=data.phone,
+        telegram_user_id=data.telegram_user_id,
+        address=data.address,
+        roles=int(Role.USER),
     )
+    await user_repo.create(user)
+    return _r(user)
 
 
-# ── Request sign-in code ───────────────────────────────────────
-
-
-@router.post("/request-code")
-async def telegram_request_code(
-    data: SmsRequestIn,
-    auth_service: AuthServiceDep,
-):
-    """Запрос кода авторизации для Telegram-пользователя."""
-    try:
-        code = await auth_service.request_sign_in_code(data.phone)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
-
-    # TODO: убрать debug_code перед продакшеном
-    return {"status": "ok", "message": "Код отправлен", "debug_code": code}
-
-
-# ── Verify code and get tokens (no cookies) ────────────────────
-
-
-@router.post("/verify-code", response_model=TelegramTokensOut)
-async def telegram_verify_code(
-    data: SmsVerifyIn,
-    auth_service: AuthServiceDep,
-):
-    """Подтвердить код и получить оба токена в теле ответа (без cookie)."""
-    try:
-        _user, access, refresh = await auth_service.verify_sign_in_code(data.phone, data.code)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
-
-    return TelegramTokensOut(access_token=access, refresh_token=refresh)
-
-
-# ── Refresh tokens via body ────────────────────────────────────
-
-
-@router.post("/refresh", response_model=TelegramTokensOut)
-async def telegram_refresh(
-    data: TelegramRefreshIn,
-    auth_service: AuthServiceDep,
-):
-    """Обновить токены. Refresh-токен передаётся в теле запроса."""
-    try:
-        access, new_refresh = await auth_service.refresh_tokens(data.refresh_token)
-    except AppException as exc:
-        raise HTTPException(status_code=exc.status_code, detail=exc.message) from None
-
-    return TelegramTokensOut(access_token=access, refresh_token=new_refresh)
+@router.post("/link", response_model=UserRead)
+async def tg_link(data: TgLinkIn, user_repo: UserRepositoryDep):
+    """Привязать tg_id к существующему пользователю (который регался через веб)."""
+    user = await user_repo.get_by_contact_number(data.phone)
+    if user is None:
+        raise UserNotFoundError()
+    user.telegram_user_id = data.telegram_user_id
+    await user_repo.flush()
+    return _r(user)
