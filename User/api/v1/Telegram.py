@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Header, HTTPException
-from sqlmodel import SQLModel
 
 from api.routes import API_V1_PREFIX, TELEGRAM
 from config import settings
 from data.entities.Role import Role
 from data.entities.User import User
 from data.repositories.UserRepo import UserRepositoryDep
+from data.schemas.Telegram import TgLinkIn, TgRegisterIn
 from data.schemas.User import UserRead
 from services.Exeptions import UserAlreadyExistsError, UserNotFoundError
 from services.UserService import UserService, UserServiceDep
@@ -25,18 +25,6 @@ router = APIRouter(
 )
 
 _r = UserService.to_read
-
-
-class TgRegisterIn(SQLModel):
-    telegram_user_id: str
-    phone: str
-    name: str
-    address: str | None = None
-
-
-class TgLinkIn(SQLModel):
-    telegram_user_id: str
-    phone: str
 
 
 @router.get("/by-tg-id/{telegram_user_id}", response_model=UserRead | None)
