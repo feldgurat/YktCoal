@@ -1,23 +1,18 @@
 import uuid
-from datetime import datetime, timezone
-from enum import IntEnum
+from datetime import UTC, datetime
+from decimal import Decimal
 
-from sqlmodel import Field, Relationship, SQLModel
-
-
-class OfferStatus(IntEnum):
-    PENDING = 1
-    ACCEPTED = 2
-    REJECTED = 3
-    WITHDRAWN = 4
+from sqlmodel import Field, SQLModel
 
 
-OFFER_STATUS_LABELS: dict[OfferStatus, str] = {
-    OfferStatus.PENDING: "Ожидает",
-    OfferStatus.ACCEPTED: "Принят",
-    OfferStatus.REJECTED: "Отклонён",
-    OfferStatus.WITHDRAWN: "Отозван",
-}
+from enum import StrEnum
+
+
+class OfferStatus(StrEnum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    WITHDRAWN = "withdrawn"
 
 
 class Offer(SQLModel, table=True):
@@ -26,21 +21,13 @@ class Offer(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
 
     order_id: uuid.UUID = Field(foreign_key="orders.id", index=True)
-    driver_id: uuid.UUID = Field(index=True)
+    driver_user_id: uuid.UUID = Field(index=True)
 
-    price: int = Field(ge=0)
-    delivery_date: str | None = Field(default=None)
-    comment: str = Field(default="", max_length=1000)
+    price: Decimal = Field(max_digits=12, decimal_places=2, gt=0)
+    comment: str | None = Field(default=None, max_length=512)
+    delivery_date: datetime
 
-    status: int = Field(default=int(OfferStatus.PENDING))
+    status: OfferStatus = Field(default=OfferStatus.PENDING, index=True)
 
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
-    updated_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
-
-    @property
-    def offer_status(self) -> OfferStatus:
-        return OfferStatus(self.status)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

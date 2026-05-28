@@ -1,24 +1,25 @@
-from uuid import UUID
+import uuid
+from datetime import datetime
+from decimal import Decimal
 
-from sqlmodel import SQLModel, Field
+from sqlmodel import Field, SQLModel
 
 
 class ResourceCreate(SQLModel):
-    name: str = Field(min_length=1, max_length=255)
-    unit: str = Field(default="тонна", max_length=50)
-    price_per_unit: int = Field(ge=0)
+    name: str = Field(min_length=1, max_length=128)
+    price: Decimal = Field(ge=0, max_digits=12, decimal_places=2)
 
 
 class ResourceUpdate(SQLModel):
-    name: str | None = None
-    unit: str | None = None
-    price_per_unit: int | None = Field(default=None, ge=0)
+    name: str | None = Field(default=None, min_length=1, max_length=128)
+    price: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
     is_active: bool | None = None
 
 
 class ResourceRead(SQLModel):
-    id: UUID
+    id: uuid.UUID
     name: str
-    unit: str
-    price_per_unit: int
+    price: Decimal
     is_active: bool
+    created_at: datetime
+    updated_at: datetime

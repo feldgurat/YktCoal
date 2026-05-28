@@ -1,220 +1,139 @@
-from uuid import UUID
+import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
 
 from api.routes import API_V1_PREFIX, ORDERS
 from api.v1.dependencies import (
     CurrentAdminDep,
     CurrentDriverDep,
-    CurrentTokenUserDep,
+    CurrentUserDep,
+    get_current_user,
 )
-from data.entities.Order import OrderStatus
-from data.schemas.Order import (
-    MessageResponse,
-    OrderCreate,
-    OrderRead,
-    OrderStatusUpdate,
-    OrderUpdate,
+from data.schemas.Offer import OfferRead
+from data.schemas.Order import OrderCreate, OrderRead, OrderUpdate
+from services.OfferService import OfferService, OfferServiceDep
+from services.OrderService import OrderService, OrderServiceDep
+
+router = APIRouter(
+    prefix=f"{API_V1_PREFIX}{ORDERS}",
+    tags=["Orders"],
+    dependencies=[Depends(get_current_user)],
 )
-from services.Exceptions import AppException
-from services.OrderService import OrderServiceDep
 
-router = APIRouter(prefix=f"{API_V1_PREFIX}{ORDERS}", tags=["Orders"])
-
-
-def _handle(exc: AppException):
-    raise HTTPException(status_code=exc.status_code, detail=exc.message)
+_r = OrderService.to_read
+_r_offer = OfferService.to_read
 
 
-# ══════════════════════════════════════════════════════════════
-# Client endpoints
-# ══════════════════════════════════════════════════════════════
+# ── Customer (любой пользователь) ──────────────────────────────
 
 
 @router.post("", response_model=OrderRead, status_code=201)
 async def create_order(
-    data: OrderCreate,
-    token_user: CurrentTokenUserDep,
-    order_service: OrderServiceDep,
+    data: OrderCreate, current_user: CurrentUserDep, service: OrderServiceDep
 ):
-    """Клиент создаёт заявку. Цена будет определена через офферы водителей."""
-    try:
-        order = await order_service.create(token_user.id, data)
-    except AppException as exc:
-        _handle(exc)
-    return order_service.to_read(order)
+    o = await service.create(current_user.id, data)
+    return _r(o)
 
 
-@router.get("/my", response_model=list[OrderRead])
-async def get_my_orders(
-    token_user: CurrentTokenUserDep,
-    order_service: OrderServiceDep,
-):
-    """Заказы текущего пользователя (как клиента)."""
-    orders = await order_service.get_by_client(token_user.id)
-    return [order_service.to_read(o) for o in orders]
-
-
-@router.patch("/{order_id}", response_model=OrderRead)
-async def update_order(
-    order_id: UUID,
-    data: OrderUpdate,
-    token_user: CurrentTokenUserDep,
-    order_service: OrderServiceDep,
-):
-    """Клиент редактирует свой заказ (только в статусе NEW)."""
-    try:
-        order = await order_service.update(order_id, data, token_user.id)
-    except AppException as exc:
-        _handle(exc)
-    return order_service.to_read(order)
-
-
-@router.post("/{order_id}/cancel", response_model=OrderRead)
-async def cancel_order(
-    order_id: UUID,
-    token_user: CurrentTokenUserDep,
-    order_service: OrderServiceDep,
-):
-    """Клиент отменяет свой заказ."""
-    try:
-        order = await order_service.cancel(order_id, token_user.id)
-    except AppException as exc:
-        _handle(exc)
-    return order_service.to_read(order)
-
-
-# ══════════════════════════════════════════════════════════════
-# Driver endpoints
-# ══════════════════════════════════════════════════════════════
-
-
-@router.get("/available", response_model=list[OrderRead])
-async def get_available_orders(
-    _driver: CurrentDriverDep,
-    order_service: OrderServiceDep,
-):
-    """Доступные заказы для водителей (NEW, открыты для офферов)."""
-    orders = await order_service.get_available()
-    return [order_service.to_read(o) for o in orders]
-
-
-@router.get("/driver/my", response_model=list[OrderRead])
-async def get_driver_orders(
-    token_user: CurrentDriverDep,
-    order_service: OrderServiceDep,
-):
-    """Заказы, назначенные текущему водителю (оффер принят)."""
-    orders = await order_service.get_by_driver(token_user.id)
-    return [order_service.to_read(o) for o in orders]
-
-
-@router.post("/{order_id}/start", response_model=OrderRead)
-async def start_delivery(
-    order_id: UUID,
-    token_user: CurrentDriverDep,
-    order_service: OrderServiceDep,
-):
-    """Водитель начинает доставку."""
-    try:
-        order = await order_service.get(order_id)
-    except AppException as exc:
-        _handle(exc)
-
-    if order.driver_id != token_user.id:
-        raise HTTPException(status_code=403, detail="Это не ваш заказ")
-
-    try:
-        order = await order_service.change_status(
-            order_id, int(OrderStatus.IN_PROGRESS)
-        )
-    except AppException as exc:
-        _handle(exc)
-    return order_service.to_read(order)
-
-
-@router.post("/{order_id}/complete", response_model=OrderRead)
-async def complete_delivery(
-    order_id: UUID,
-    token_user: CurrentDriverDep,
-    order_service: OrderServiceDep,
-):
-    """Водитель завершает доставку."""
-    try:
-        order = await order_service.get(order_id)
-    except AppException as exc:
-        _handle(exc)
-
-    if order.driver_id != token_user.id:
-        raise HTTPException(status_code=403, detail="Это не ваш заказ")
-
-    try:
-        order = await order_service.change_status(
-            order_id, int(OrderStatus.COMPLETED)
-        )
-    except AppException as exc:
-        _handle(exc)
-    return order_service.to_read(order)
-
-
-# ══════════════════════════════════════════════════════════════
-# Admin endpoints
-# ══════════════════════════════════════════════════════════════
-
-
-@router.get("/by-status/{status}", response_model=list[OrderRead])
-async def get_orders_by_status(
-    status: int,
-    _admin: CurrentAdminDep,
-    order_service: OrderServiceDep,
-):
-    """Все заказы с определённым статусом (admin)."""
-    orders = await order_service.get_by_status(status)
-    return [order_service.to_read(o) for o in orders]
-
-
-@router.get("", response_model=list[OrderRead])
-async def get_all_orders(
-    _admin: CurrentAdminDep,
-    order_service: OrderServiceDep,
-):
-    """Все заказы (admin)."""
-    orders = await order_service.get_all()
-    return [order_service.to_read(o) for o in orders]
+@router.get("/me", response_model=list[OrderRead])
+async def my_orders(current_user: CurrentUserDep, service: OrderServiceDep):
+    items = await service.list_my(current_user.id)
+    return [_r(o) for o in items]
 
 
 @router.get("/{order_id}", response_model=OrderRead)
 async def get_order(
-    order_id: UUID,
-    token_user: CurrentTokenUserDep,
-    order_service: OrderServiceDep,
+    order_id: uuid.UUID, _user: CurrentUserDep, service: OrderServiceDep
 ):
-    """Получить заказ по ID."""
-    try:
-        order = await order_service.get(order_id)
-    except AppException as exc:
-        _handle(exc)
-
-    is_owner = order.client_id == token_user.id
-    is_driver = order.driver_id == token_user.id
-    is_admin = token_user.has_role("admin")
-
-    if not (is_owner or is_driver or is_admin):
-        raise HTTPException(status_code=403, detail="Нет доступа к этому заказу")
-
-    return order_service.to_read(order)
+    o = await service.get(order_id)
+    return _r(o)
 
 
-@router.post("/{order_id}/status", response_model=OrderRead)
-async def change_status(
-    order_id: UUID,
-    data: OrderStatusUpdate,
-    _admin: CurrentAdminDep,
-    order_service: OrderServiceDep,
+@router.patch("/{order_id}", response_model=OrderRead)
+async def update_order(
+    order_id: uuid.UUID,
+    data: OrderUpdate,
+    current_user: CurrentUserDep,
+    service: OrderServiceDep,
 ):
-    """Админ меняет статус заказа."""
-    try:
-        order = await order_service.change_status(order_id, data.status)
-    except AppException as exc:
-        _handle(exc)
-    return order_service.to_read(order)
+    o = await service.update(current_user.id, order_id, data)
+    return _r(o)
+
+
+@router.get("/{order_id}/offers", response_model=list[OfferRead])
+async def list_offers_for_order(
+    order_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    offer_service: OfferServiceDep,
+):
+    offers = await offer_service.list_for_order(current_user.id, order_id)
+    return [_r_offer(o) for o in offers]
+
+
+@router.post("/{order_id}/offers/{offer_id}/accept", response_model=OrderRead)
+async def accept_offer(
+    order_id: uuid.UUID,
+    offer_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    service: OrderServiceDep,
+):
+    order, _offer = await service.accept_offer(current_user.id, order_id, offer_id)
+    return _r(order)
+
+
+@router.post("/{order_id}/complete", response_model=OrderRead)
+async def complete_order(
+    order_id: uuid.UUID, current_user: CurrentUserDep, service: OrderServiceDep
+):
+    o = await service.complete(current_user.id, order_id)
+    return _r(o)
+
+
+@router.post("/{order_id}/cancel", response_model=OrderRead)
+async def cancel_order(
+    order_id: uuid.UUID, current_user: CurrentUserDep, service: OrderServiceDep
+):
+    o = await service.cancel(current_user.id, order_id)
+    return _r(o)
+
+
+# ── Driver ─────────────────────────────────────────────────────
+
+
+@router.get("/available/list", response_model=list[OrderRead])
+async def list_available(_driver: CurrentDriverDep, service: OrderServiceDep):
+    """Доступные для подачи Offer заказы (status=NEW)."""
+    items = await service.list_available()
+    return [_r(o) for o in items]
+
+
+@router.get("/driver/me", response_model=list[OrderRead])
+async def my_driver_orders(current_user: CurrentDriverDep, service: OrderServiceDep):
+    """Заказы, в которых я — назначенный водитель."""
+    items = await service.list_driver_orders(current_user.id)
+    return [_r(o) for o in items]
+
+
+@router.post("/{order_id}/start", response_model=OrderRead)
+async def start_order(
+    order_id: uuid.UUID, current_user: CurrentDriverDep, service: OrderServiceDep
+):
+    o = await service.start(current_user.id, order_id)
+    return _r(o)
+
+
+@router.post("/{order_id}/driver-withdraw", response_model=OrderRead)
+async def driver_withdraw(
+    order_id: uuid.UUID, current_user: CurrentDriverDep, service: OrderServiceDep
+):
+    o = await service.driver_withdraw(current_user.id, order_id)
+    return _r(o)
+
+
+# ── Admin ──────────────────────────────────────────────────────
+
+
+@router.get("", response_model=list[OrderRead])
+async def list_all_orders(service: OrderServiceDep, _admin: CurrentAdminDep):
+    items = await service.list_all()
+    return [_r(o) for o in items]

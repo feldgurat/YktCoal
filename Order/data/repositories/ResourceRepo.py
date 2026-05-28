@@ -1,4 +1,5 @@
-from typing import Annotated, Sequence
+from collections.abc import Sequence
+from typing import Annotated
 
 from fastapi import Depends
 from sqlmodel import select
@@ -9,17 +10,15 @@ from data.repositories.BaseRepo import BaseRepository
 
 
 class ResourceRepository(BaseRepository[Resource]):
+    async def get_by_name(self, name: str) -> Resource | None:
+        result = await self._session.exec(select(Resource).where(Resource.name == name))
+        return result.first()
+
     async def get_active(self) -> Sequence[Resource]:
         result = await self._session.exec(
-            select(Resource).where(Resource.is_active == True)
+            select(Resource).where(Resource.is_active.is_(True)).order_by(Resource.name)
         )
         return result.all()
-
-    async def get_by_name(self, name: str) -> Resource | None:
-        result = await self._session.exec(
-            select(Resource).where(Resource.name == name)
-        )
-        return result.one_or_none()
 
 
 def get_resource_repository(session: SessionDep) -> ResourceRepository:

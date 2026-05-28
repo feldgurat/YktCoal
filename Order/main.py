@@ -1,12 +1,20 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 
-from data.Database import async_session_factory, create_tables, engine
+from api.v1.Debug import router as debug_router
+from api.v1.Offers import router as offers_router
+from api.v1.Orders import router as orders_router
+from api.v1.Resources import router as resources_router
+from api.v1.Telegram import router as telegram_router
+from config import settings
+from data.Database import create_tables, engine
+
 from data.Redis import close_redis, init_redis
-from services.Startup import seed_default_resources
+from services.Exeptions import AppException
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,9 +30,6 @@ async def lifespan(app: FastAPI):
     await init_redis()
     logger.info("Redis connected")
 
-    async with async_session_factory() as session:
-        await seed_default_resources(session)
-
     logger.info("Startup complete")
     yield
 
@@ -33,19 +38,36 @@ async def lifespan(app: FastAPI):
     logger.info("Shutdown complete")
 
 
-app = FastAPI(title="Order API", version="2.0.0", lifespan=lifespan)
+app = FastAPI(title="Order API", version="1.0.0", lifespan=lifespan)
 
-from api.v1.Order import router as order_router
-from api.v1.Resource import router as resource_router
-from api.v1.Offer import router as offer_router
 
-app.include_router(order_router)
-app.include_router(resource_router)
-app.include_router(offer_router)
+@app.exception_handler(AppException)
+async def app_exception_handler(request: Request, exc: AppException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.message},
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception("Unhandled exception", exc_info=exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Внутренняя ошибка сервера"},
+    )
+
+
+app.include_router(resources_router)
+app.include_router(orders_router)
+app.include_router(offers_router)
+app.include_router(telegram_router)
+app.include_router(debug_router)
+
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=settings.CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

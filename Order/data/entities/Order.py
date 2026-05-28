@@ -1,75 +1,38 @@
 import uuid
-from datetime import datetime, timezone
-from enum import IntEnum
+from datetime import UTC, datetime
+from decimal import Decimal
 
-from sqlmodel import Field, Relationship, SQLModel
-
-from data.entities.Resource import Resource
+from sqlmodel import Field, SQLModel
 
 
-class OrderStatus(IntEnum):
-    NEW = 1           # клиент создал заявку, водители могут предлагать офферы
-    ACCEPTED = 2      # клиент принял оффер, водитель назначен
-    IN_PROGRESS = 3   # водитель в пути / доставляет
-    COMPLETED = 4     # доставка завершена
-    CANCELLED = 5     # клиент отменил
-    REJECTED = 6      # админ отклонил
+from enum import StrEnum
 
 
-STATUS_LABELS: dict[OrderStatus, str] = {
-    OrderStatus.NEW: "Новый",
-    OrderStatus.ACCEPTED: "Принят",
-    OrderStatus.IN_PROGRESS: "В пути",
-    OrderStatus.COMPLETED: "Выполнен",
-    OrderStatus.CANCELLED: "Отменён",
-    OrderStatus.REJECTED: "Отклонён",
-}
-
-ALLOWED_TRANSITIONS: dict[OrderStatus, list[OrderStatus]] = {
-    OrderStatus.NEW: [OrderStatus.ACCEPTED, OrderStatus.CANCELLED, OrderStatus.REJECTED],
-    OrderStatus.ACCEPTED: [OrderStatus.IN_PROGRESS, OrderStatus.CANCELLED, OrderStatus.REJECTED],
-    OrderStatus.IN_PROGRESS: [OrderStatus.COMPLETED, OrderStatus.CANCELLED],
-    OrderStatus.COMPLETED: [],
-    OrderStatus.CANCELLED: [],
-    OrderStatus.REJECTED: [],
-}
+class OrderStatus(StrEnum):
+    NEW = "new"
+    ACCEPTED = "accepted"
+    IN_PROCESS = "in_process"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
 
 
 class Order(SQLModel, table=True):
     __tablename__ = "orders"
-
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-
-    client_id: uuid.UUID = Field(index=True)
-    driver_id: uuid.UUID | None = Field(default=None, index=True)
-
-    dest_address: str = Field(max_length=512)
-    latitude: float | None = Field(default=None)
-    longitude: float | None = Field(default=None)
-
+    user_id: uuid.UUID = Field(index=True)
+    accepted_driver_id: uuid.UUID | None = Field(default=None, index=True)
     resource_id: uuid.UUID = Field(foreign_key="resources.id", index=True)
-    resource: Resource | None = Relationship()
+    dest_address: str = Field(max_length=512)
+    volume: Decimal = Field(max_digits=12, decimal_places=2, gt=0)
+    cost: Decimal = Field(max_digits=12, decimal_places=2, ge=0)
+    final_price: Decimal | None = Field(default=None, max_digits=12, decimal_places=2)
+    requested_delivery_date: datetime
+    order_date: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    status: OrderStatus = Field(default=OrderStatus.NEW, index=True)
+    comment: str | None = Field(default=None, max_length=1024)
 
-    volume: float = Field(default=1.0)
+    latitude: Decimal | None = Field(default=None, max_digits=9, decimal_places=6)
+    longitude: Decimal | None = Field(default=None, max_digits=9, decimal_places=6)
 
-    # cost = 0 при создании; заполняется ценой из принятого оффера
-    cost: int = Field(default=0)
-
-    delivery_date: str | None = Field(default=None)
-    comment: str = Field(default="", max_length=1000)
-
-    status: int = Field(default=int(OrderStatus.NEW))
-
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
-    updated_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
-
-    @property
-    def order_status(self) -> OrderStatus:
-        return OrderStatus(self.status)
-
-    def can_transition_to(self, new_status: OrderStatus) -> bool:
-        return new_status in ALLOWED_TRANSITIONS.get(self.order_status, [])
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

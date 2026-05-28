@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
-from typing import Generic, Sequence, TypeVar
+from collections.abc import Sequence
+from datetime import UTC, datetime
+from typing import TypeVar
 
 from sqlmodel import SQLModel, select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -7,10 +8,14 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 T = TypeVar("T", bound=SQLModel)
 
 
-class BaseRepository(Generic[T]):
+class BaseRepository[T: SQLModel]:
     def __init__(self, session: AsyncSession, model: type[T]) -> None:
         self._session = session
         self._model = model
+
+    async def flush(self) -> None:
+        """Сбросить накопленные изменения в БД"""
+        await self._session.flush()
 
     async def get_by_id(self, entity_id) -> T | None:
         return await self._session.get(self._model, entity_id)
@@ -28,8 +33,7 @@ class BaseRepository(Generic[T]):
         ent = await self.get_by_id(entity_id)
         if ent is None:
             return None
-        if hasattr(ent, "updated_at"):
-            ent.updated_at = datetime.now(timezone.utc).isoformat()
+        ent.updated_at = datetime.now(UTC)
         for field, value in data.model_dump(exclude_unset=True).items():
             setattr(ent, field, value)
         await self._session.flush()

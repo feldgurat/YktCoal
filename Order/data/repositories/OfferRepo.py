@@ -1,46 +1,53 @@
 import uuid
-from typing import Annotated, Sequence
+from collections.abc import Sequence
+from typing import Annotated
 
 from fastapi import Depends
 from sqlmodel import select
 
 from data.Database import SessionDep
-from data.entities.Offer import Offer, OfferStatus
+from data.entities.Offer import Offer
+from data.entities.OfferStatus import OfferStatus
 from data.repositories.BaseRepo import BaseRepository
 
 
 class OfferRepository(BaseRepository[Offer]):
-
-    async def get_by_order(self, order_id: uuid.UUID) -> Sequence[Offer]:
-        result = await self._session.exec(
-            select(Offer).where(Offer.order_id == order_id)
-        )
-        return result.all()
-
-    async def get_pending_by_order(self, order_id: uuid.UUID) -> Sequence[Offer]:
+    async def get_by_order_id(self, order_id: uuid.UUID) -> Sequence[Offer]:
         result = await self._session.exec(
             select(Offer)
             .where(Offer.order_id == order_id)
-            .where(Offer.status == int(OfferStatus.PENDING))
+            .order_by(Offer.created_at.asc())
         )
         return result.all()
 
-    async def get_by_driver(self, driver_id: uuid.UUID) -> Sequence[Offer]:
+    async def get_by_driver_id(self, driver_user_id: uuid.UUID) -> Sequence[Offer]:
         result = await self._session.exec(
-            select(Offer).where(Offer.driver_id == driver_id)
+            select(Offer)
+            .where(Offer.driver_user_id == driver_user_id)
+            .order_by(Offer.created_at.desc())
         )
         return result.all()
 
-    async def get_by_order_and_driver(
-        self, order_id: uuid.UUID, driver_id: uuid.UUID
+    async def get_pending_for_order(self, order_id: uuid.UUID) -> Sequence[Offer]:
+        result = await self._session.exec(
+            select(Offer).where(
+                Offer.order_id == order_id,
+                Offer.status == OfferStatus.PENDING,
+            )
+        )
+        return result.all()
+
+    async def get_existing_pending(
+        self, order_id: uuid.UUID, driver_user_id: uuid.UUID
     ) -> Offer | None:
         result = await self._session.exec(
-            select(Offer)
-            .where(Offer.order_id == order_id)
-            .where(Offer.driver_id == driver_id)
-            .where(Offer.status == int(OfferStatus.PENDING))
+            select(Offer).where(
+                Offer.order_id == order_id,
+                Offer.driver_user_id == driver_user_id,
+                Offer.status == OfferStatus.PENDING,
+            )
         )
-        return result.one_or_none()
+        return result.first()
 
 
 def get_offer_repository(session: SessionDep) -> OfferRepository:

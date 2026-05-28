@@ -1,18 +1,22 @@
 import uuid
-from datetime import datetime, timezone
-from typing import Annotated, Sequence
+from collections.abc import Sequence
+from datetime import UTC, datetime
+from typing import Annotated
 
 from fastapi import Depends
 
-from data.entities.Order import ALLOWED_TRANSITIONS, STATUS_LABELS, Order, OrderStatus
+from data.entities.Offer import Offer
+from data.entities.OfferStatus import OfferStatus
+from data.entities.Order import Order
+from data.entities.OrderStatus import OrderStatus
+from data.repositories.OfferRepo import OfferRepository, OfferRepositoryDep
 from data.repositories.OrderRepo import OrderRepository, OrderRepositoryDep
 from data.repositories.ResourceRepo import ResourceRepository, ResourceRepositoryDep
 from data.schemas.Order import OrderCreate, OrderRead, OrderUpdate
-from data.schemas.Resource import ResourceRead
-from services.Exceptions import (
-    AccessDeniedError,
-    InvalidStatusTransitionError,
+from services.Exeptions import (
+    OrderAccessDeniedError,
     OrderNotFoundError,
+    OrderWrongStatusError,
     ResourceNotFoundError,
 )
 
@@ -21,153 +25,238 @@ class OrderService:
     def __init__(
         self,
         order_repo: OrderRepository,
+        offer_repo: OfferRepository,
         resource_repo: ResourceRepository,
     ) -> None:
-        self._order_repo = order_repo
-        self._resource_repo = resource_repo
+        self._orders = order_repo
+        self._offers = offer_repo
+        self._resources = resource_repo
 
     # ── Entity → Schema ────────────────────────────────────────
 
     @staticmethod
-    def to_read(order: Order) -> OrderRead:
-        resource_read = None
-        if order.resource is not None:
-            resource_read = ResourceRead(
-                id=order.resource.id,
-                name=order.resource.name,
-                unit=order.resource.unit,
-                price_per_unit=order.resource.price_per_unit,
-                is_active=order.resource.is_active,
-            )
-
+    def to_read(o: Order) -> OrderRead:
         return OrderRead(
-            id=order.id,
-            client_id=order.client_id,
-            driver_id=order.driver_id,
-            dest_address=order.dest_address,
-            latitude=order.latitude,
-            longitude=order.longitude,
-            resource=resource_read,
-            volume=order.volume,
-            cost=order.cost,
-            delivery_date=order.delivery_date,
-            comment=order.comment,
-            status=order.status,
-            status_label=STATUS_LABELS.get(
-                OrderStatus(order.status), "Неизвестен"
-            ),
-            created_at=order.created_at,
-            updated_at=order.updated_at,
+            id=o.id,
+            user_id=o.user_id,
+            accepted_driver_id=o.accepted_driver_id,
+            resource_id=o.resource_id,
+            dest_address=o.dest_address,
+            volume=o.volume,
+            cost=o.cost,
+            final_price=o.final_price,
+            requested_delivery_date=o.requested_delivery_date,
+            order_date=o.order_date,
+            status=o.status,
+            comment=o.comment,
+            latitude=o.latitude,
+            longitude=o.longitude,
+            created_at=o.created_at,
+            updated_at=o.updated_at,
         )
 
     # ── Queries ────────────────────────────────────────────────
 
     async def get(self, order_id: uuid.UUID) -> Order:
-        order = await self._order_repo.get_by_id_with_resource(order_id)
-        if order is None:
+        o = await self._orders.get_by_id(order_id)
+        if o is None:
             raise OrderNotFoundError()
-        return order
+        return o
 
-    async def get_all(self) -> Sequence[Order]:
-        return await self._order_repo.get_all_with_resource()
+    async def list_my(self, user_id: uuid.UUID) -> Sequence[Order]:
+        return await self._orders.get_by_user_id(user_id)
 
-    async def get_by_client(self, client_id: uuid.UUID) -> Sequence[Order]:
-        return await self._order_repo.get_by_client(client_id)
+    async def list_driver_orders(self, driver_user_id: uuid.UUID) -> Sequence[Order]:
+        return await self._orders.get_by_driver_id(driver_user_id)
 
-    async def get_by_driver(self, driver_id: uuid.UUID) -> Sequence[Order]:
-        return await self._order_repo.get_by_driver(driver_id)
+    async def list_available(self) -> Sequence[Order]:
+        """Заказы со статусом NEW — водители видят их для подачи Offer."""
+        return await self._orders.get_available()
 
-    async def get_by_status(self, status: int) -> Sequence[Order]:
-        return await self._order_repo.get_by_status(status)
+    async def list_all(self) -> Sequence[Order]:
+        return await self._orders.get_all()
 
-    async def get_available(self) -> Sequence[Order]:
-        return await self._order_repo.get_available()
+    # ── Create / Update ────────────────────────────────────────
 
-    # ── Create ─────────────────────────────────────────────────
-
-    async def create(self, client_id: uuid.UUID, data: OrderCreate) -> Order:
-        resource = await self._resource_repo.get_by_id(data.resource_id)
-        if resource is None:
+    async def create(self, user_id: uuid.UUID, data: OrderCreate) -> Order:
+        if await self._resources.get_by_id(data.resource_id) is None:
             raise ResourceNotFoundError()
 
-        # cost = 0; итоговая цена определяется принятым оффером
-        order = Order(
-            client_id=client_id,
+        o = Order(
+            user_id=user_id,
+            resource_id=data.resource_id,
             dest_address=data.dest_address,
+            volume=data.volume,
+            cost=data.cost,
+            requested_delivery_date=data.requested_delivery_date,
+            comment=data.comment,
             latitude=data.latitude,
             longitude=data.longitude,
-            resource_id=data.resource_id,
-            volume=data.volume,
-            cost=0,
-            delivery_date=data.delivery_date,
-            comment=data.comment,
-            status=int(OrderStatus.NEW),
+            status=OrderStatus.NEW,
         )
-        created = await self._order_repo.create(order)
-        return await self.get(created.id)
-
-    # ── Update (только NEW) ───────────────────────────────────
+        return await self._orders.create(o)
 
     async def update(
-        self, order_id: uuid.UUID, data: OrderUpdate, requester_id: uuid.UUID
+        self, user_id: uuid.UUID, order_id: uuid.UUID, data: OrderUpdate
     ) -> Order:
-        order = await self.get(order_id)
+        o = await self.get(order_id)
+        if o.user_id != user_id:
+            raise OrderAccessDeniedError("Можно редактировать только свои заказы")
+        if o.status != OrderStatus.NEW:
+            raise OrderWrongStatusError("Редактировать можно только новые заказы")
 
-        if order.client_id != requester_id:
-            raise AccessDeniedError()
+        if data.resource_id is not None:
+            if await self._resources.get_by_id(data.resource_id) is None:
+                raise ResourceNotFoundError()
 
-        if order.order_status != OrderStatus.NEW:
-            raise InvalidStatusTransitionError(
-                "Редактировать можно только заказ в статусе «Новый»"
-            )
-
-        order.updated_at = datetime.now(timezone.utc).isoformat()
-        for field, value in data.model_dump(exclude_unset=True).items():
-            setattr(order, field, value)
-
-        await self._order_repo._session.flush()
-        return await self.get(order_id)
+        updated = await self._orders.update(order_id, data)
+        if updated is None:
+            raise OrderNotFoundError()
+        return updated
 
     # ── Status transitions ─────────────────────────────────────
 
-    async def change_status(self, order_id: uuid.UUID, new_status: int) -> Order:
+    async def accept_offer(
+        self, user_id: uuid.UUID, order_id: uuid.UUID, offer_id: uuid.UUID
+    ) -> tuple[Order, Offer]:
+        """
+        Заказчик принимает один из встречных Offer.
+        Order: NEW → ACCEPTED, проставляются accepted_driver_id и final_price.
+        Этот Offer → ACCEPTED, остальные pending → REJECTED.
+        """
         order = await self.get(order_id)
-        target = OrderStatus(new_status)
-
-        if not order.can_transition_to(target):
-            current_label = STATUS_LABELS.get(order.order_status, "?")
-            target_label = STATUS_LABELS.get(target, "?")
-            raise InvalidStatusTransitionError(
-                f"Нельзя перевести из «{current_label}» в «{target_label}»"
+        if order.user_id != user_id:
+            raise OrderAccessDeniedError("Принять предложение может только заказчик")
+        if order.status != OrderStatus.NEW:
+            raise OrderWrongStatusError(
+                "Принять предложение можно только для нового заказа"
             )
 
-        order.status = int(target)
-        order.updated_at = datetime.now(timezone.utc).isoformat()
-        await self._order_repo._session.flush()
-        return await self.get(order_id)
+        offer = await self._offers.get_by_id(offer_id)
+        if offer is None or offer.order_id != order.id:
+            raise OrderNotFoundError("Предложение не относится к этому заказу")
+        if offer.status != OfferStatus.PENDING:
+            raise OrderWrongStatusError("Это предложение уже не активно")
 
-    # ── Cancel (client) ────────────────────────────────────────
+        now = datetime.now(UTC)
 
-    async def cancel(self, order_id: uuid.UUID, requester_id: uuid.UUID) -> Order:
+        # Приняли это предложение.
+        offer.status = OfferStatus.ACCEPTED
+        offer.updated_at = now
+
+        # Остальные pending по этому заказу — Rejected.
+        siblings = await self._offers.get_pending_for_order(order.id)
+        for s in siblings:
+            if s.id == offer.id:
+                continue
+            s.status = OfferStatus.REJECTED
+            s.updated_at = now
+
+        # Обновляем заказ.
+        order.status = OrderStatus.ACCEPTED
+        order.accepted_driver_id = offer.driver_user_id
+        order.final_price = offer.price
+        order.updated_at = now
+
+        await self._orders.flush()
+        return order, offer
+
+    async def start(self, driver_user_id: uuid.UUID, order_id: uuid.UUID) -> Order:
+        """Водитель начал выполнять заказ. ACCEPTED → IN_PROCESS."""
         order = await self.get(order_id)
+        if order.accepted_driver_id != driver_user_id:
+            raise OrderAccessDeniedError("Этот заказ назначен другому водителю")
+        if order.status != OrderStatus.ACCEPTED:
+            raise OrderWrongStatusError("Начать можно только заказ в статусе ACCEPTED")
+        order.status = OrderStatus.IN_PROCESS
+        order.updated_at = datetime.now(UTC)
+        await self._orders.flush()
+        return order
 
-        if order.client_id != requester_id:
-            raise AccessDeniedError()
+    async def complete(self, user_id: uuid.UUID, order_id: uuid.UUID) -> Order:
+        """Заказчик подтверждает получение. IN_PROCESS → COMPLETED."""
+        order = await self.get(order_id)
+        if order.user_id != user_id:
+            raise OrderAccessDeniedError("Подтвердить выполнение может только заказчик")
+        if order.status != OrderStatus.IN_PROCESS:
+            raise OrderWrongStatusError(
+                "Подтвердить выполнение можно только для заказа в работе"
+            )
+        order.status = OrderStatus.COMPLETED
+        order.updated_at = datetime.now(UTC)
+        await self._orders.flush()
+        return order
 
-        if not order.can_transition_to(OrderStatus.CANCELLED):
-            raise InvalidStatusTransitionError("Этот заказ нельзя отменить")
+    async def cancel(self, user_id: uuid.UUID, order_id: uuid.UUID) -> Order:
+        """
+        Заказчик отменяет. Допустимо до тех пор, пока заказ не в IN_PROCESS.
+        Активные Offer переходят в REJECTED.
+        """
+        order = await self.get(order_id)
+        if order.user_id != user_id:
+            raise OrderAccessDeniedError("Отменить заказ может только заказчик")
+        if order.status not in (OrderStatus.NEW, OrderStatus.ACCEPTED):
+            raise OrderWrongStatusError(
+                "Отменить можно только заказ в статусе NEW или ACCEPTED"
+            )
 
-        order.status = int(OrderStatus.CANCELLED)
-        order.updated_at = datetime.now(timezone.utc).isoformat()
-        await self._order_repo._session.flush()
-        return await self.get(order_id)
+        now = datetime.now(UTC)
+        for off in await self._offers.get_pending_for_order(order.id):
+            off.status = OfferStatus.REJECTED
+            off.updated_at = now
+
+        order.status = OrderStatus.CANCELLED
+        order.updated_at = now
+        await self._orders.flush()
+        return order
+
+    async def driver_withdraw(
+        self, driver_user_id: uuid.UUID, order_id: uuid.UUID
+    ) -> Order:
+        """
+        Водитель отказался от уже принятого заказа (Order=ACCEPTED, ещё не начал).
+        Заказ возвращается в NEW, accepted_driver и final_price сбрасываются.
+        Принятый Offer этого водителя → WITHDRAWN. Остальные старые Offer
+        остаются REJECTED — заказчику нужно дождаться новых.
+        """
+        order = await self.get(order_id)
+        if order.accepted_driver_id != driver_user_id:
+            raise OrderAccessDeniedError("Этот заказ назначен другому водителю")
+        if order.status != OrderStatus.ACCEPTED:
+            raise OrderWrongStatusError(
+                "Отказаться можно только до начала выполнения (статус ACCEPTED)"
+            )
+
+        # Находим accepted-offer этого водителя.
+        all_offers = await self._offers.get_by_order_id(order.id)
+        accepted = next(
+            (
+                o
+                for o in all_offers
+                if o.driver_user_id == driver_user_id
+                and o.status == OfferStatus.ACCEPTED
+            ),
+            None,
+        )
+        now = datetime.now(UTC)
+        if accepted is not None:
+            accepted.status = OfferStatus.WITHDRAWN
+            accepted.updated_at = now
+
+        order.status = OrderStatus.NEW
+        order.accepted_driver_id = None
+        order.final_price = None
+        order.updated_at = now
+        await self._orders.flush()
+        return order
 
 
 def get_order_service(
     order_repo: OrderRepositoryDep,
+    offer_repo: OfferRepositoryDep,
     resource_repo: ResourceRepositoryDep,
 ) -> OrderService:
-    return OrderService(order_repo, resource_repo)
+    return OrderService(order_repo, offer_repo, resource_repo)
 
 
 OrderServiceDep = Annotated[OrderService, Depends(get_order_service)]

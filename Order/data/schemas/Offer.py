@@ -1,24 +1,31 @@
-from uuid import UUID
+import uuid
+from datetime import datetime
+from decimal import Decimal
 
-from sqlmodel import SQLModel, Field
+from sqlmodel import Field, SQLModel
 
-from data.entities.Offer import OFFER_STATUS_LABELS, OfferStatus
+from data.entities.OfferStatus import OfferStatus
 
 
 class OfferCreate(SQLModel):
-    price: int = Field(ge=0)
-    delivery_date: str | None = None
-    comment: str = Field(default="", max_length=1000)
+    order_id: uuid.UUID
+    price: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
+    comment: str | None = Field(default=None, max_length=512)
+    delivery_date: datetime
 
 
 class OfferRead(SQLModel):
-    id: UUID
-    order_id: UUID
-    driver_id: UUID
-    price: int
-    delivery_date: str | None
-    comment: str
-    status: int
-    status_label: str
-    created_at: str
-    updated_at: str
+    id: uuid.UUID
+    order_id: uuid.UUID
+    driver_user_id: uuid.UUID
+    price: Decimal
+    comment: str | None
+    delivery_date: datetime
+    status: OfferStatus
+    created_at: datetime
+    updated_at: datetime
+
+
+# Telegram: user_id водителя передаётся ботом.
+class TgOfferCreate(OfferCreate):
+    user_id: uuid.UUID

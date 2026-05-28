@@ -1,37 +1,34 @@
-from typing import Annotated, Any, Callable
 import uuid
+from collections.abc import Callable
+from typing import Annotated
 
-import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlmodel import SQLModel
 
-from config import settings
-from data.Redis import get_redis
+from services.AuthService import AuthServiceDep
+from services.Exeptions import AppException
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
-_BLACKLIST_KEY = "token_bl:{jti}"
 
+class AuthenticatedUser(SQLModel):
+    """
+    Лёгкое представление пользователя, восстановленное из JWT.
+    Driver-сервис не хранит таблицу users — все данные приходят из токена.
+    """
 
-class TokenUser:
-    """Минимальная информация о пользователе из JWT."""
-
-    def __init__(self, user_id: uuid.UUID, roles: list[str], payload: dict[str, Any]) -> None:
-        self.id = user_id
-        self.roles = roles
-        self.token_version: int = payload.get("ver", 0)
-        self.jti: str = payload["jti"]
-        self.payload = payload
+    id: uuid.UUID
+    roles: list[str]
 
     def has_role(self, role: str) -> bool:
-        return role in self.roles
+        return role.lower() in (r.lower() for r in self.roles)
 
 
-async def get_current_token_user(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(bearer_scheme)
-    ],
-) -> TokenUser:
+async def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+    auth_service: AuthServiceDep,
+) -> AuthenticatedUser:
     if credentials is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -39,66 +36,52 @@ async def get_current_token_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    raw_token = credentials.credentials
-
     try:
-        payload = jwt.decode(
-            raw_token,
-            settings.JWT_SECRET,
-            algorithms=[settings.JWT_ALGORITHM],
+        payload = auth_service.decode_token(
+            credentials.credentials, expected_type="access"
         )
-    except jwt.ExpiredSignatureError:
+    except AppException as exc:
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=exc.message,
+            headers={"WWW-Authenticate": "Bearer"},
+        ) from None
+
+    jti = payload.get("jti")
+    if jti is None or await auth_service.is_token_revoked(jti):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Токен просрочен",
+            detail="Токен отозван",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except jwt.InvalidTokenError:
+
+    try:
+        user_id = uuid.UUID(payload["sub"])
+    except (KeyError, ValueError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Невалидный токен",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from None
 
-    if payload.get("type") != "access":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Неверный тип токена",
-        )
-
-    # Проверка blacklist в общем Redis
-    jti = payload.get("jti")
-    if jti:
-        redis_client = get_redis()
-        if await redis_client.exists(_BLACKLIST_KEY.format(jti=jti)):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Токен отозван",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-    user_id = uuid.UUID(payload["sub"])
-    roles = payload.get("roles", ["user"])
-    if not isinstance(roles, list):
-        roles = ["user"]
-
-    return TokenUser(user_id, roles, payload)
+    roles = payload.get("roles") or []
+    return AuthenticatedUser(id=user_id, roles=roles)
 
 
-CurrentTokenUserDep = Annotated[TokenUser, Depends(get_current_token_user)]
+CurrentUserDep = Annotated[AuthenticatedUser, Depends(get_current_user)]
 
 
 def require_role(role: str) -> Callable:
-    async def _check(token_user: CurrentTokenUserDep) -> TokenUser:
-        if not token_user.has_role(role):
+    async def _check(current_user: CurrentUserDep) -> AuthenticatedUser:
+        if not current_user.has_role(role):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Недостаточно прав",
             )
-        return token_user
+        return current_user
 
     return _check
 
 
-CurrentAdminDep = Annotated[TokenUser, Depends(require_role("admin"))]
-CurrentDriverDep = Annotated[TokenUser, Depends(require_role("driver"))]
+CurrentAdminDep = Annotated[AuthenticatedUser, Depends(require_role("admin"))]
+CurrentDriverDep = Annotated[AuthenticatedUser, Depends(require_role("driver"))]
