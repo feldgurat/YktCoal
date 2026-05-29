@@ -1,4 +1,4 @@
-from data.schemas.Common import MessageResponse
+from data.schemas.common import MessageResponse
 from fastapi import APIRouter
 from sqlmodel import SQLModel
 

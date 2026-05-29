@@ -6,9 +6,9 @@ from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 
 from api.v1.Debug import router as debug_router
-from api.v1.Offers import router as offers_router
-from api.v1.Orders import router as orders_router
-from api.v1.Resources import router as resources_router
+from api.v1.Offer import router as offers_router
+from api.v1.Order import router as orders_router
+from api.v1.Resource import router as resources_router
 from api.v1.Telegram import router as telegram_router
 from config import settings
 from data.Database import create_tables, engine
