@@ -10,11 +10,8 @@ from data.repositories.BaseRepo import BaseRepository
 
 
 class DriverRepository(BaseRepository[Driver]):
-
     async def get_by_user_id(self, user_id: uuid.UUID) -> Driver | None:
-        result = await self._session.exec(
-            select(Driver).where(Driver.user_id == user_id)
-        )
+        result = await self._session.exec(select(Driver).where(Driver.user_id == user_id))
         return result.one_or_none()
 
 

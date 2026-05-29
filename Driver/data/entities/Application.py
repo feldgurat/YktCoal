@@ -1,51 +1,39 @@
 import uuid
-from datetime import datetime, timezone
-from enum import IntEnum
+from datetime import UTC, datetime
+from enum import StrEnum
 
+from sqlalchemy import Column
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, SQLModel
 
 
-class ApplicationStatus(IntEnum):
-    PENDING = 1
-    APPROVED = 2
-    REJECTED = 3
-
-
-APPLICATION_STATUS_LABELS: dict[ApplicationStatus, str] = {
-    ApplicationStatus.PENDING: "На рассмотрении",
-    ApplicationStatus.APPROVED: "Одобрена",
-    ApplicationStatus.REJECTED: "Отклонена",
-}
+class ApplicationStatus(StrEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
 
 class Application(SQLModel, table=True):
     __tablename__ = "applications"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    user_id: uuid.UUID = Field(index=True)
+    user_id: uuid.UUID = Field(index=True)  # ссылка на User-сервис
 
-    # Данные о транспорте
-    vehicle_brand: str = Field(max_length=100)
-    vehicle_model: str = Field(max_length=100)
-    vehicle_plate: str = Field(max_length=20)
-    vehicle_capacity_tons: float = Field(ge=0)
+    status: ApplicationStatus = Field(default=ApplicationStatus.PENDING, index=True)
 
-    # Документы
-    license_url: str | None = Field(default=None, max_length=512)
-    insurance_url: str | None = Field(default=None, max_length=512)
+    license_url: str = Field(max_length=512)
+    passport: str = Field(max_length=512)
 
-    comment: str = Field(default="", max_length=1000)
-    reject_reason: str | None = Field(default=None, max_length=1000)
+    # Снепшот машин на момент подачи заявки. Это не таблица Vehicle —
+    # настоящие Vehicle создаются только при approve, из этого снепшота.
+    # Формат: [{"brand": "...", "model": "...", "reg_number": "...",
+    #          "registration_docs": "...", "insurance": "...", "capacity": N}, ...]
+    vehicles_snapshot: list[dict] = Field(default_factory=list, sa_column=Column(JSONB))
 
-    status: int = Field(default=int(ApplicationStatus.PENDING))
+    submission_date: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    reviewed_at: datetime | None = Field(default=None)
+    reviewed_by: uuid.UUID | None = Field(default=None)  # user_id админа
+    rejection_reason: str | None = Field(default=None, max_length=512)
 
-    created_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
-    updated_at: str = Field(
-        default_factory=lambda: datetime.now(timezone.utc).isoformat()
-    )
-
-    @property
-    def application_status(self) -> ApplicationStatus:
-        return ApplicationStatus(self.status)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

@@ -1,12 +1,12 @@
 from uuid import UUID
 
+from Driver.services.Exeptions import AppException
 from fastapi import APIRouter, HTTPException
 
 from api.routes import API_V1_PREFIX, DRIVERS
-from api.v1.dependencies import CurrentAdminDep, CurrentDriverDep, CurrentTokenUserDep
+from api.v1.dependencies import CurrentAdminDep, CurrentDriverDep
 from data.schemas.Driver import DriverRead, DriverStatusRead, DriverUpdate
 from services.DriverService import DriverServiceDep
-from services.Exceptions import AppException
 
 router = APIRouter(prefix=f"{API_V1_PREFIX}{DRIVERS}", tags=["Drivers"])
 
@@ -16,6 +16,7 @@ def _handle(exc: AppException):
 
 
 # ── Водитель: свой профиль ─────────────────────────────────────
+
 
 @router.get("/me", response_model=DriverRead)
 async def get_my_profile(
@@ -44,6 +45,7 @@ async def update_my_profile(
 
 # ── Внутренний: проверка статуса (для Order-сервиса) ───────────
 
+
 @router.get("/by-user/{user_id}/status", response_model=DriverStatusRead)
 async def get_driver_status(
     user_id: UUID,
@@ -58,6 +60,7 @@ async def get_driver_status(
 
 
 # ── Admin ──────────────────────────────────────────────────────
+
 
 @router.get("", response_model=list[DriverRead])
 async def get_all_drivers(

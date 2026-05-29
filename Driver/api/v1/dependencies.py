@@ -1,5 +1,6 @@
-from typing import Annotated, Any, Callable
 import uuid
+from collections.abc import Callable
+from typing import Annotated, Any
 
 import jwt
 from fastapi import Depends, HTTPException, status
@@ -28,9 +29,7 @@ class TokenUser:
 
 
 async def get_current_token_user(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(bearer_scheme)
-    ],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
 ) -> TokenUser:
     if credentials is None:
         raise HTTPException(
@@ -52,13 +51,13 @@ async def get_current_token_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Токен просрочен",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from None
     except jwt.InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Невалидный токен",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from None
 
     if payload.get("type") != "access":
         raise HTTPException(

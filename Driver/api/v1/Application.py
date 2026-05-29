@@ -1,12 +1,12 @@
 from uuid import UUID
 
+from Driver.services.Exeptions import AppException
 from fastapi import APIRouter, HTTPException
 
 from api.routes import API_V1_PREFIX, APPLICATIONS
 from api.v1.dependencies import CurrentAdminDep, CurrentTokenUserDep
 from data.schemas.Application import ApplicationCreate, ApplicationRead, ApplicationReject
 from services.ApplicationService import ApplicationServiceDep
-from services.Exceptions import AppException
 
 router = APIRouter(prefix=f"{API_V1_PREFIX}{APPLICATIONS}", tags=["Applications"])
 
@@ -16,6 +16,7 @@ def _handle(exc: AppException):
 
 
 # ── Пользователь подаёт заявку ─────────────────────────────────
+
 
 @router.post("", response_model=ApplicationRead, status_code=201)
 async def create_application(
@@ -33,6 +34,7 @@ async def create_application(
 
 # ── Мои заявки ─────────────────────────────────────────────────
 
+
 @router.get("/my", response_model=list[ApplicationRead])
 async def get_my_applications(
     token_user: CurrentTokenUserDep,
@@ -43,6 +45,7 @@ async def get_my_applications(
 
 
 # ── Admin: список заявок ───────────────────────────────────────
+
 
 @router.get("", response_model=list[ApplicationRead])
 async def get_all_applications(
@@ -76,6 +79,7 @@ async def get_application(
 
 
 # ── Admin: одобрить / отклонить ────────────────────────────────
+
 
 @router.post("/{app_id}/approve", response_model=ApplicationRead)
 async def approve_application(

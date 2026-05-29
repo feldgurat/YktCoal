@@ -1,34 +1,46 @@
-from uuid import UUID
+import uuid
+from datetime import datetime
 
-from sqlmodel import SQLModel, Field
+from sqlmodel import Field, SQLModel
+
+from data.entities.ApplicationStatus import ApplicationStatus
+
+
+class VehicleInApplication(SQLModel):
+    brand: str = Field(min_length=1, max_length=128)
+    model: str = Field(min_length=1, max_length=128)
+    reg_number: str = Field(min_length=1, max_length=32)
+    registration_docs: str = Field(min_length=1, max_length=512)
+    insurance: str = Field(min_length=1, max_length=512)
+    capacity: int = Field(ge=1)
 
 
 class ApplicationCreate(SQLModel):
-    vehicle_brand: str = Field(min_length=1, max_length=100)
-    vehicle_model: str = Field(min_length=1, max_length=100)
-    vehicle_plate: str = Field(min_length=1, max_length=20)
-    vehicle_capacity_tons: float = Field(ge=0)
-    license_url: str | None = None
-    insurance_url: str | None = None
-    comment: str = Field(default="", max_length=1000)
-
-
-class ApplicationRead(SQLModel):
-    id: UUID
-    user_id: UUID
-    vehicle_brand: str
-    vehicle_model: str
-    vehicle_plate: str
-    vehicle_capacity_tons: float
-    license_url: str | None
-    insurance_url: str | None
-    comment: str
-    reject_reason: str | None
-    status: int
-    status_label: str
-    created_at: str
-    updated_at: str
+    license_url: str = Field(min_length=1, max_length=512)
+    passport: str = Field(min_length=1, max_length=512)
+    # Минимум одна машина по требованию ТЗ.
+    vehicles: list[VehicleInApplication] = Field(min_length=1)
 
 
 class ApplicationReject(SQLModel):
-    reason: str = Field(min_length=1, max_length=1000)
+    reason: str = Field(min_length=1, max_length=512)
+
+
+class ApplicationRead(SQLModel):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    status: ApplicationStatus
+    license_url: str
+    passport: str
+    vehicles_snapshot: list[dict]
+    submission_date: datetime
+    reviewed_at: datetime | None
+    reviewed_by: uuid.UUID | None
+    rejection_reason: str | None
+    created_at: datetime
+    updated_at: datetime
+
+
+# Telegram-вариант: бот уже передаёт user_id (резолвив tg_id через User-сервис).
+class TgApplicationCreate(ApplicationCreate):
+    user_id: uuid.UUID
