@@ -1947,7 +1947,7 @@ LABL 0 Microsoft Sans Serif,8,N</a:FontList>
 <o:AssociationSymbol Id="o41">
 <a:CreationDate>1779367212</a:CreationDate>
 <a:ModificationDate>1779790587</a:ModificationDate>
-<a:Rect>((-19708,8235), (-5810,25971))</a:Rect>
+<a:Rect>((-19708,8219), (-5810,25971))</a:Rect>
 <a:ListOfPoints>((-19308,25571),(-19308,9966),(-6210,9966))</a:ListOfPoints>
 <a:CornerStyle>2</a:CornerStyle>
 <a:ArrowStyle>8</a:ArrowStyle>
@@ -2062,7 +2062,7 @@ LABL 0 Microsoft Sans Serif,8,N</a:FontList>
 <o:AssociationSymbol Id="o49">
 <a:CreationDate>1765002857</a:CreationDate>
 <a:ModificationDate>1780040391</a:ModificationDate>
-<a:Rect>((-1023,-7921), (4308,1008))</a:Rect>
+<a:Rect>((-1023,-7921), (4308,1006))</a:Rect>
 <a:ListOfPoints>((3908,-7521),(3908,60),(-623,60))</a:ListOfPoints>
 <a:CornerStyle>2</a:CornerStyle>
 <a:ArrowStyle>8</a:ArrowStyle>
