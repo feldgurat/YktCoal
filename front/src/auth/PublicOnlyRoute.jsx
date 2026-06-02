@@ -1,12 +1,14 @@
 // src/auth/PublicOnlyRoute.jsx
+import { useSelector } from 'react-redux';
 import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+
+import { selectAuthStatus } from '../store/authSlice';
 
 // Оборачивает /login и /register — страницы, куда авторизованному
 // попадать не надо. Решает задачу «залогиненный может снова войти
 // в другой аккаунт»: его просто редиректит в /profile.
 export default function PublicOnlyRoute() {
-  const { status } = useAuth();
+  const status = useSelector(selectAuthStatus);
 
   if (status === 'loading') {
     return (

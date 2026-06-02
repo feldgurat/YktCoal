@@ -1,12 +1,12 @@
-// src/auth/ProtectedRoute.jsx
+import { useSelector } from 'react-redux';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+import { selectAuthStatus } from '../store/authSlice';
 
-// Оборачивает страницы, на которые можно заходить только авторизованному.
-// Если ещё грузим статус — показываем заглушку (чтобы не моргнуть редиректом
-// на /login, когда пользователь на самом деле залогинен).
+// Оборачивает страницы, доступные только авторизованному пользователю.
+// Если статус ещё 'loading' — показываем заглушку, чтобы не моргнуть
+// редиректом, пока bootstrapAuth ещё в полёте.
 export default function ProtectedRoute() {
-  const { status } = useAuth();
+  const status = useSelector(selectAuthStatus);
   const location = useLocation();
 
   if (status === 'loading') {
@@ -18,7 +18,7 @@ export default function ProtectedRoute() {
   }
 
   if (status === 'guest') {
-    // Запоминаем, куда юзер хотел попасть — после логина можно вернуть.
+    // Запоминаем, куда юзер хотел попасть — после логина вернём.
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 

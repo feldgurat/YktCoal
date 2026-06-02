@@ -1,12 +1,15 @@
+// src/pages/Register.jsx
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+
 import CodeForm from '../components/CodeForm';
 import RegisterForm from '../components/RegisterForm';
-import { useAuth } from '../auth/AuthContext';
+import { login } from '../store/authSlice';
 
 function Register() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const dispatch = useDispatch();
 
   const [step, setStep] = useState('register');
   const [phone, setPhone] = useState(null);
@@ -21,19 +24,25 @@ function Register() {
 
   const handleLoginAfterCode = async (tokens) => {
     try {
-      await login(tokens.access_token);
+      await dispatch(login(tokens.access_token)).unwrap();
       navigate('/profile', { replace: true });
     } catch (err) {
       console.error('Не удалось войти после регистрации:', err);
-      setError('Регистрация прошла, но не удалось войти. Попробуйте со страницы входа.');
+      setError(
+        'Регистрация прошла, но не удалось войти. Попробуйте со страницы входа.',
+      );
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen
-        bg-gradient-to-br from-[#DAEAFF] via-[#DAEAFF] to-[#9BA3AD]">
-      <div className="bg-white w-80
-                shadow-[0_0_33px_7px_rgba(0,0,0,0.25)] rounded-[11px] p-6">
+    <div
+      className="flex items-center justify-center min-h-screen
+        bg-gradient-to-br from-[#DAEAFF] via-[#DAEAFF] to-[#9BA3AD]"
+    >
+      <div
+        className="bg-white w-80
+                shadow-[0_0_33px_7px_rgba(0,0,0,0.25)] rounded-[11px] p-6"
+      >
         {step === 'register' && <RegisterForm onRegSuccess={handleCodeSent} />}
         {step === 'code' && (
           <CodeForm
