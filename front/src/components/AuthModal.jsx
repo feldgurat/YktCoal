@@ -1,11 +1,14 @@
+// src/components/AuthModal.jsx
 import { useState } from 'react';
+import { useDispatch } from 'react-redux';
+
 import PhoneForm from './PhoneForm';
 import CodeForm from './CodeForm';
 import RegisterForm from './RegisterForm';
-import { useAuth } from '../auth/AuthContext';
+import { login } from '../store/authSlice';
 
 function AuthModal({ isOpen, onClose, onSuccess }) {
-  const { login } = useAuth();
+  const dispatch = useDispatch();
   const [step, setStep] = useState('phone'); // 'phone' | 'register' | 'code'
   const [phone, setPhone] = useState(null);
   const [code, setCode] = useState(null);
@@ -25,7 +28,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
 
   const handleLogin = async (tokens) => {
     try {
-      await login(tokens.access_token);
+      await dispatch(login(tokens.access_token)).unwrap();
       onSuccess?.(tokens);
       onClose();
     } catch (err) {
