@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import field_validator
@@ -45,5 +46,5 @@ class UserRead(SQLModel):
     address: str | None
     roles: list[str]
     is_active: bool
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
