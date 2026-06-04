@@ -1,6 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
+from sqlalchemy import DateTime
 from sqlmodel import Field, SQLModel
 
 from data.entities.Role import RoleHelpers
@@ -17,9 +18,14 @@ class User(SQLModel, table=True):
     roles: int = Field(default=0)
     token_version: int = Field(default=0)
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_type=DateTime(timezone=True),  # ← изменить
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_type=DateTime(timezone=True),  # ← изменить
+    )
     # ── Role helpers ───────────────────────────────────────────
 
     def has_role(self, role_name: str) -> bool:

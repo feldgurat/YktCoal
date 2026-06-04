@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlmodel import Field, SQLModel
-
+from sqlalchemy import DateTime
 
 from enum import StrEnum
 
@@ -34,5 +34,11 @@ class Order(SQLModel, table=True):
     latitude: Decimal | None = Field(default=None, max_digits=9, decimal_places=6)
     longitude: Decimal | None = Field(default=None, max_digits=9, decimal_places=6)
 
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_type=DateTime(timezone=True),  # ← изменить
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_type=DateTime(timezone=True),  # ← изменить
+    )

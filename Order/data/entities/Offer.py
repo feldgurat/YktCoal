@@ -3,7 +3,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlmodel import Field, SQLModel
-
+from sqlalchemy import DateTime
 
 from enum import StrEnum
 
@@ -29,5 +29,11 @@ class Offer(SQLModel, table=True):
 
     status: OfferStatus = Field(default=OfferStatus.PENDING, index=True)
 
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_type=DateTime(timezone=True),  # ← изменить
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_type=DateTime(timezone=True),  # ← изменить
+    )

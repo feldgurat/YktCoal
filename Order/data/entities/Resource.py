@@ -3,6 +3,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlmodel import Field, SQLModel
+from sqlalchemy import DateTime
 
 
 class Resource(SQLModel, table=True):
@@ -12,5 +13,11 @@ class Resource(SQLModel, table=True):
     name: str = Field(max_length=128, unique=True, index=True)
     price: Decimal = Field(max_digits=12, decimal_places=2, ge=0)
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_type=DateTime(timezone=True),  # ← изменить
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_type=DateTime(timezone=True),  # ← изменить
+    )
