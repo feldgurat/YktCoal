@@ -1,110 +1,77 @@
-from uuid import UUID
+import uuid
 
-from Driver.services.Exeptions import AppException
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
 
 from api.routes import API_V1_PREFIX, DRIVERS
-from api.v1.dependencies import CurrentAdminDep, CurrentDriverDep
-from data.schemas.Driver import DriverRead, DriverStatusRead, DriverUpdate
-from services.DriverService import DriverServiceDep
+from api.v1.dependencies import CurrentAdminDep, CurrentUserDep, get_current_user
+from data.schemas.Common import MessageResponse
+from data.schemas.Driver import DriverRead
+from data.schemas.Vehicle import VehicleCreate, VehicleRead, VehicleUpdate
+from services.DriverService import DriverService, DriverServiceDep
+from services.VehicleService import VehicleService, VehicleServiceDep
 
-router = APIRouter(prefix=f"{API_V1_PREFIX}{DRIVERS}", tags=["Drivers"])
+router = APIRouter(
+    prefix=f"{API_V1_PREFIX}{DRIVERS}",
+    tags=["Drivers"],
+    dependencies=[Depends(get_current_user)],
+)
+
+_r_driver = DriverService.to_read
+_r_vehicle = VehicleService.to_read
 
 
-def _handle(exc: AppException):
-    raise HTTPException(status_code=exc.status_code, detail=exc.message)
-
-
-# ── Водитель: свой профиль ─────────────────────────────────────
+# ── Current driver ─────────────────────────────────────────────
 
 
 @router.get("/me", response_model=DriverRead)
-async def get_my_profile(
-    token_user: CurrentDriverDep,
-    driver_service: DriverServiceDep,
+async def get_my_driver_profile(current_user: CurrentUserDep, service: DriverServiceDep):
+    d = await service.get_by_user_id(current_user.id)
+    return _r_driver(d)
+
+
+@router.get("/me/vehicles", response_model=list[VehicleRead])
+async def my_vehicles(current_user: CurrentUserDep, service: VehicleServiceDep):
+    vehicles = await service.list_for_user(current_user.id)
+    return [_r_vehicle(v) for v in vehicles]
+
+
+@router.post("/me/vehicles", response_model=VehicleRead, status_code=201)
+async def add_my_vehicle(
+    data: VehicleCreate,
+    current_user: CurrentUserDep,
+    service: VehicleServiceDep,
 ):
-    try:
-        driver = await driver_service.get_by_user(token_user.id)
-    except AppException as exc:
-        _handle(exc)
-    return driver_service.to_read(driver)
+    v = await service.create_for_user(current_user.id, data)
+    return _r_vehicle(v)
 
 
-@router.patch("/me", response_model=DriverRead)
-async def update_my_profile(
-    data: DriverUpdate,
-    token_user: CurrentDriverDep,
-    driver_service: DriverServiceDep,
+@router.patch("/me/vehicles/{vehicle_id}", response_model=VehicleRead)
+async def update_my_vehicle(
+    vehicle_id: uuid.UUID,
+    data: VehicleUpdate,
+    current_user: CurrentUserDep,
+    service: VehicleServiceDep,
 ):
-    try:
-        driver = await driver_service.update(token_user.id, data)
-    except AppException as exc:
-        _handle(exc)
-    return driver_service.to_read(driver)
+    v = await service.update_for_user(current_user.id, vehicle_id, data)
+    return _r_vehicle(v)
 
 
-# ── Внутренний: проверка статуса (для Order-сервиса) ───────────
-
-
-@router.get("/by-user/{user_id}/status", response_model=DriverStatusRead)
-async def get_driver_status(
-    user_id: UUID,
-    driver_service: DriverServiceDep,
+@router.delete("/me/vehicles/{vehicle_id}", response_model=MessageResponse)
+async def delete_my_vehicle(
+    vehicle_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    service: VehicleServiceDep,
 ):
-    """Открытый эндпоинт для проверки статуса водителя другими сервисами."""
-    try:
-        driver = await driver_service.get_by_user(user_id)
-    except AppException as exc:
-        _handle(exc)
-    return driver_service.to_status_read(driver)
+    deleted = await service.delete_for_user(current_user.id, vehicle_id)
+    if deleted:
+        return MessageResponse(success=True, message="Машина удалена")
+    return MessageResponse(success=False, message="Машина не найдена")
 
 
 # ── Admin ──────────────────────────────────────────────────────
 
 
 @router.get("", response_model=list[DriverRead])
-async def get_all_drivers(
-    _admin: CurrentAdminDep,
-    driver_service: DriverServiceDep,
-):
-    drivers = await driver_service.get_all()
-    return [driver_service.to_read(d) for d in drivers]
-
-
-@router.get("/{driver_id}", response_model=DriverRead)
-async def get_driver(
-    driver_id: UUID,
-    _admin: CurrentAdminDep,
-    driver_service: DriverServiceDep,
-):
-    try:
-        driver = await driver_service.get(driver_id)
-    except AppException as exc:
-        _handle(exc)
-    return driver_service.to_read(driver)
-
-
-@router.post("/{driver_id}/block", response_model=DriverRead)
-async def block_driver(
-    driver_id: UUID,
-    _admin: CurrentAdminDep,
-    driver_service: DriverServiceDep,
-):
-    try:
-        driver = await driver_service.block(driver_id)
-    except AppException as exc:
-        _handle(exc)
-    return driver_service.to_read(driver)
-
-
-@router.post("/{driver_id}/unblock", response_model=DriverRead)
-async def unblock_driver(
-    driver_id: UUID,
-    _admin: CurrentAdminDep,
-    driver_service: DriverServiceDep,
-):
-    try:
-        driver = await driver_service.unblock(driver_id)
-    except AppException as exc:
-        _handle(exc)
-    return driver_service.to_read(driver)
+async def list_drivers(service: DriverServiceDep, _admin: CurrentAdminDep):
+    drivers = await service.get_all()
+    return [_r_driver(d) for d in drivers]

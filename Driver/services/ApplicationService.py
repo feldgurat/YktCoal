@@ -3,10 +3,10 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from typing import Annotated
 
-from data.entities.ApplicationStatus import ApplicationStatus
 from fastapi import Depends
 
 from data.entities.Application import Application
+from data.entities.ApplicationStatus import ApplicationStatus
 from data.entities.Driver import Driver
 from data.entities.Vehicle import Vehicle
 from data.repositories.ApplicationRepo import ApplicationRepository, ApplicationRepositoryDep

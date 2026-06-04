@@ -2,8 +2,9 @@ import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 
+from sqlalchemy import Column, DateTime
 from sqlmodel import Field, SQLModel
-from sqlalchemy import DateTime
+
 
 from enum import StrEnum
 
@@ -15,9 +16,9 @@ class OrderStatus(StrEnum):
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
-
 class Order(SQLModel, table=True):
     __tablename__ = "orders"
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     user_id: uuid.UUID = Field(index=True)
     accepted_driver_id: uuid.UUID | None = Field(default=None, index=True)
@@ -26,8 +27,13 @@ class Order(SQLModel, table=True):
     volume: Decimal = Field(max_digits=12, decimal_places=2, gt=0)
     cost: Decimal = Field(max_digits=12, decimal_places=2, ge=0)
     final_price: Decimal | None = Field(default=None, max_digits=12, decimal_places=2)
-    requested_delivery_date: datetime
-    order_date: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    requested_delivery_date: datetime = Field(sa_column=Column(DateTime(timezone=True)))
+    order_date: datetime = Field(
+        default_factory=lambda: datetime.now(UTC),
+        sa_column=Column(DateTime(timezone=True)),
+    )
+
     status: OrderStatus = Field(default=OrderStatus.NEW, index=True)
     comment: str | None = Field(default=None, max_length=1024)
 
@@ -36,9 +42,9 @@ class Order(SQLModel, table=True):
 
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
-        sa_type=DateTime(timezone=True),  # ← изменить
+        sa_column=Column(DateTime(timezone=True)),
     )
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
-        sa_type=DateTime(timezone=True),  # ← изменить
+        sa_column=Column(DateTime(timezone=True)),
     )

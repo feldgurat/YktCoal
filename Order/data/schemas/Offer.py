@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from sqlmodel import Field, SQLModel
 
-from data.entities.OfferStatus import OfferStatus
+from data.entities.Offer import OfferStatus
 
 
 class OfferCreate(SQLModel):

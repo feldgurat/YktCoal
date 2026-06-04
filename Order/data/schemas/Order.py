@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from sqlmodel import Field, SQLModel
 
-from data.entities.OrderStatus import OrderStatus
+from data.entities.Order import OrderStatus
 
 
 class OrderCreate(SQLModel):

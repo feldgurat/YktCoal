@@ -6,7 +6,8 @@ from fastapi import Depends
 from sqlmodel import select
 
 from data.Database import SessionDep
-from data.entities.Application import Application, ApplicationStatus
+from data.entities.Application import Application
+from data.entities.ApplicationStatus import ApplicationStatus
 from data.repositories.BaseRepo import BaseRepository
 
 

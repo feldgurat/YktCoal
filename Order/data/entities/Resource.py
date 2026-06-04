@@ -2,8 +2,8 @@ import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 
+from sqlalchemy import Column, DateTime
 from sqlmodel import Field, SQLModel
-from sqlalchemy import DateTime
 
 
 class Resource(SQLModel, table=True):
@@ -15,9 +15,9 @@ class Resource(SQLModel, table=True):
     is_active: bool = Field(default=True)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
-        sa_type=DateTime(timezone=True),  # ← изменить
+        sa_column=Column(DateTime(timezone=True)),
     )
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
-        sa_type=DateTime(timezone=True),  # ← изменить
+        sa_column=Column(DateTime(timezone=True)),
     )

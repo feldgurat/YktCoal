@@ -1,9 +1,9 @@
 import logging
 from contextlib import asynccontextmanager
 
-from api.v1.Applications import router as applications_router
+from api.v1.Application import router as applications_router
 from api.v1.Debug import router as debug_router
-from api.v1.Drivers import router as drivers_router
+from api.v1.Driver import router as drivers_router
 from api.v1.Internal import router as internal_router
 from api.v1.Telegram import router as telegram_router
 from fastapi import FastAPI, Request
@@ -13,7 +13,6 @@ from starlette.middleware.cors import CORSMiddleware
 from config import settings
 from data.Database import create_tables, engine
 
-# Импортируем сущности, чтобы SQLModel.metadata знал о таблицах при create_all.
 from data.entities.Application import Application  # noqa: F401, E402
 from data.entities.Driver import Driver  # noqa: F401, E402
 from data.entities.Vehicle import Vehicle  # noqa: F401, E402

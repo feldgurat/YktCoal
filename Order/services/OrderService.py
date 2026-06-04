@@ -5,10 +5,8 @@ from typing import Annotated
 
 from fastapi import Depends
 
-from data.entities.Offer import Offer
-from data.entities.OfferStatus import OfferStatus
-from data.entities.Order import Order
-from data.entities.OrderStatus import OrderStatus
+from data.entities.Offer import Offer, OfferStatus
+from data.entities.Order import Order, OrderStatus
 from data.repositories.OfferRepo import OfferRepository, OfferRepositoryDep
 from data.repositories.OrderRepo import OrderRepository, OrderRepositoryDep
 from data.repositories.ResourceRepo import ResourceRepository, ResourceRepositoryDep

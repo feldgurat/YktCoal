@@ -1,7 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime
+from sqlalchemy import Column, DateTime
 from sqlmodel import Field, SQLModel
 
 
@@ -16,13 +16,13 @@ class Vehicle(SQLModel, table=True):
     reg_number: str = Field(max_length=32, index=True)
     registration_docs: str = Field(max_length=512)
     insurance: str = Field(max_length=512)
-    capacity: int = Field(ge=1)  # тонны или килограммы — на усмотрение фронта
+    capacity: int = Field(ge=1)
 
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
-        sa_type=DateTime(timezone=True),  # ← изменить
+        sa_column=Column(DateTime(timezone=True)),
     )
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
-        sa_type=DateTime(timezone=True),  # ← изменить
+        sa_column=Column(DateTime(timezone=True)),
     )
