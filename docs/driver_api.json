@@ -1,0 +1,1754 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Driver API",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/api/v1/applications/upload-doc": {
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Upload Doc",
+        "description": "Загрузить один документ (паспорт / права / страховка / ПТС-СТС).\nВозвращает имя файла, которое нужно подставить в соответствующее\nполе при создании заявки (license_url / passport, и т.д.).",
+        "operationId": "upload_doc_api_v1_applications_upload_doc_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_doc_api_v1_applications_upload_doc_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadedFileOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/applications/files/{filename}": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Download Doc",
+        "description": "Отдать ранее загруженный документ. Доступ — любой аутентифицированный\nпользователь (защита от анонимного скачивания), на MVP без fine-grained\nпроверки владельца.",
+        "operationId": "download_doc_api_v1_applications_files__filename__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "List Applications",
+        "operationId": "list_applications_api_v1_applications_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Applications Api V1 Applications Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Submit Application",
+        "operationId": "submit_application_api_v1_applications_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/applications/me": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "My Applications",
+        "operationId": "my_applications_api_v1_applications_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Applications Api V1 Applications Me Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/applications/pending": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "List Pending",
+        "operationId": "list_pending_api_v1_applications_pending_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Pending Api V1 Applications Pending Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/applications/{app_id}": {
+      "get": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Get Application",
+        "operationId": "get_application_api_v1_applications__app_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "app_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "App Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{app_id}/approve": {
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Approve Application",
+        "operationId": "approve_application_api_v1_applications__app_id__approve_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "app_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "App Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/applications/{app_id}/reject": {
+      "post": {
+        "tags": [
+          "Applications"
+        ],
+        "summary": "Reject Application",
+        "operationId": "reject_application_api_v1_applications__app_id__reject_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "app_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "App Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplicationReject"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/drivers/me": {
+      "get": {
+        "tags": [
+          "Drivers"
+        ],
+        "summary": "Get My Driver Profile",
+        "operationId": "get_my_driver_profile_api_v1_drivers_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DriverRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drivers/me/vehicles": {
+      "get": {
+        "tags": [
+          "Drivers"
+        ],
+        "summary": "My Vehicles",
+        "operationId": "my_vehicles_api_v1_drivers_me_vehicles_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/VehicleRead"
+                  },
+                  "type": "array",
+                  "title": "Response My Vehicles Api V1 Drivers Me Vehicles Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Drivers"
+        ],
+        "summary": "Add My Vehicle",
+        "operationId": "add_my_vehicle_api_v1_drivers_me_vehicles_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drivers/me/vehicles/{vehicle_id}": {
+      "patch": {
+        "tags": [
+          "Drivers"
+        ],
+        "summary": "Update My Vehicle",
+        "operationId": "update_my_vehicle_api_v1_drivers_me_vehicles__vehicle_id__patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehicle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Vehicle Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VehicleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Drivers"
+        ],
+        "summary": "Delete My Vehicle",
+        "operationId": "delete_my_vehicle_api_v1_drivers_me_vehicles__vehicle_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "vehicle_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Vehicle Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/drivers": {
+      "get": {
+        "tags": [
+          "Drivers"
+        ],
+        "summary": "List Drivers",
+        "operationId": "list_drivers_api_v1_drivers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DriverRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Drivers Api V1 Drivers Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/telegram/upload-doc": {
+      "post": {
+        "tags": [
+          "Telegram"
+        ],
+        "summary": "Tg Upload Doc",
+        "operationId": "tg_upload_doc_api_v1_telegram_upload_doc_post",
+        "parameters": [
+          {
+            "name": "X-Service-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Service-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_tg_upload_doc_api_v1_telegram_upload_doc_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadedFileOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/telegram/files/{filename}": {
+      "get": {
+        "tags": [
+          "Telegram"
+        ],
+        "summary": "Tg Download Doc",
+        "operationId": "tg_download_doc_api_v1_telegram_files__filename__get",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          },
+          {
+            "name": "X-Service-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Service-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/telegram/applications": {
+      "post": {
+        "tags": [
+          "Telegram"
+        ],
+        "summary": "Tg Submit Application",
+        "operationId": "tg_submit_application_api_v1_telegram_applications_post",
+        "parameters": [
+          {
+            "name": "X-Service-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Service-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TgApplicationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplicationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/telegram/applications/by-user/{user_id}": {
+      "get": {
+        "tags": [
+          "Telegram"
+        ],
+        "summary": "Tg My Applications",
+        "operationId": "tg_my_applications_api_v1_telegram_applications_by_user__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "X-Service-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Service-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApplicationRead"
+                  },
+                  "title": "Response Tg My Applications Api V1 Telegram Applications By User  User Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/telegram/drivers/by-user/{user_id}": {
+      "get": {
+        "tags": [
+          "Telegram"
+        ],
+        "summary": "Tg Get Driver",
+        "operationId": "tg_get_driver_api_v1_telegram_drivers_by_user__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "X-Service-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Service-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/DriverRead"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Tg Get Driver Api V1 Telegram Drivers By User  User Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/telegram/drivers/by-user/{user_id}/vehicles": {
+      "get": {
+        "tags": [
+          "Telegram"
+        ],
+        "summary": "Tg List Vehicles",
+        "operationId": "tg_list_vehicles_api_v1_telegram_drivers_by_user__user_id__vehicles_get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "X-Service-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Service-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VehicleRead"
+                  },
+                  "title": "Response Tg List Vehicles Api V1 Telegram Drivers By User  User Id  Vehicles Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/telegram/drivers/vehicles": {
+      "post": {
+        "tags": [
+          "Telegram"
+        ],
+        "summary": "Tg Add Vehicle",
+        "operationId": "tg_add_vehicle_api_v1_telegram_drivers_vehicles_post",
+        "parameters": [
+          {
+            "name": "X-Service-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Service-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TgVehicleCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VehicleRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/reset-database": {
+      "post": {
+        "tags": [
+          "Debug"
+        ],
+        "summary": "Reset Database",
+        "operationId": "reset_database_api_v1_admin_reset_database_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/internal/drivers/by-user/{user_id}": {
+      "get": {
+        "tags": [
+          "Internal"
+        ],
+        "summary": "Internal Get Driver",
+        "description": "Получить водителя по user_id. None если пользователь не водитель.",
+        "operationId": "internal_get_driver_api_v1_internal_drivers_by_user__user_id__get",
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "User Id"
+            }
+          },
+          {
+            "name": "X-Service-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "X-Service-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/DriverRead"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Internal Get Driver Api V1 Internal Drivers By User  User Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApplicationCreate": {
+        "properties": {
+          "license_url": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "License Url"
+          },
+          "passport": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Passport"
+          },
+          "vehicles": {
+            "items": {
+              "$ref": "#/components/schemas/VehicleInApplication"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Vehicles"
+          }
+        },
+        "type": "object",
+        "required": [
+          "license_url",
+          "passport",
+          "vehicles"
+        ],
+        "title": "ApplicationCreate"
+      },
+      "ApplicationRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ApplicationStatus"
+          },
+          "license_url": {
+            "type": "string",
+            "title": "License Url"
+          },
+          "passport": {
+            "type": "string",
+            "title": "Passport"
+          },
+          "vehicles_snapshot": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Vehicles Snapshot"
+          },
+          "submission_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Submission Date"
+          },
+          "reviewed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed At"
+          },
+          "reviewed_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewed By"
+          },
+          "rejection_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rejection Reason"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "status",
+          "license_url",
+          "passport",
+          "vehicles_snapshot",
+          "submission_date",
+          "reviewed_at",
+          "reviewed_by",
+          "rejection_reason",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ApplicationRead"
+      },
+      "ApplicationReject": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "ApplicationReject"
+      },
+      "ApplicationStatus": {
+        "type": "string",
+        "enum": [
+          "pending",
+          "approved",
+          "rejected"
+        ],
+        "title": "ApplicationStatus"
+      },
+      "Body_tg_upload_doc_api_v1_telegram_upload_doc_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_tg_upload_doc_api_v1_telegram_upload_doc_post"
+      },
+      "Body_upload_doc_api_v1_applications_upload_doc_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_doc_api_v1_applications_upload_doc_post"
+      },
+      "DriverRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          },
+          "application_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Application Id"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "application_id",
+          "is_active",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "DriverRead"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "MessageResponse": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "title": "MessageResponse"
+      },
+      "TgApplicationCreate": {
+        "properties": {
+          "license_url": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "License Url"
+          },
+          "passport": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Passport"
+          },
+          "vehicles": {
+            "items": {
+              "$ref": "#/components/schemas/VehicleInApplication"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Vehicles"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "license_url",
+          "passport",
+          "vehicles",
+          "user_id"
+        ],
+        "title": "TgApplicationCreate"
+      },
+      "TgVehicleCreate": {
+        "properties": {
+          "brand": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Brand"
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model"
+          },
+          "reg_number": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Reg Number"
+          },
+          "registration_docs": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Registration Docs"
+          },
+          "insurance": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Insurance"
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "title": "Capacity"
+          },
+          "user_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "User Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "brand",
+          "model",
+          "reg_number",
+          "registration_docs",
+          "insurance",
+          "capacity",
+          "user_id"
+        ],
+        "title": "TgVehicleCreate"
+      },
+      "UploadedFileOut": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          }
+        },
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "UploadedFileOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "VehicleCreate": {
+        "properties": {
+          "brand": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Brand"
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model"
+          },
+          "reg_number": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Reg Number"
+          },
+          "registration_docs": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Registration Docs"
+          },
+          "insurance": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Insurance"
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "title": "Capacity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "brand",
+          "model",
+          "reg_number",
+          "registration_docs",
+          "insurance",
+          "capacity"
+        ],
+        "title": "VehicleCreate"
+      },
+      "VehicleInApplication": {
+        "properties": {
+          "brand": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Brand"
+          },
+          "model": {
+            "type": "string",
+            "maxLength": 128,
+            "minLength": 1,
+            "title": "Model"
+          },
+          "reg_number": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Reg Number"
+          },
+          "registration_docs": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Registration Docs"
+          },
+          "insurance": {
+            "type": "string",
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Insurance"
+          },
+          "capacity": {
+            "type": "integer",
+            "minimum": 1,
+            "title": "Capacity"
+          }
+        },
+        "type": "object",
+        "required": [
+          "brand",
+          "model",
+          "reg_number",
+          "registration_docs",
+          "insurance",
+          "capacity"
+        ],
+        "title": "VehicleInApplication"
+      },
+      "VehicleRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "driver_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Driver Id"
+          },
+          "brand": {
+            "type": "string",
+            "title": "Brand"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model"
+          },
+          "reg_number": {
+            "type": "string",
+            "title": "Reg Number"
+          },
+          "registration_docs": {
+            "type": "string",
+            "title": "Registration Docs"
+          },
+          "insurance": {
+            "type": "string",
+            "title": "Insurance"
+          },
+          "capacity": {
+            "type": "integer",
+            "title": "Capacity"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "driver_id",
+          "brand",
+          "model",
+          "reg_number",
+          "registration_docs",
+          "insurance",
+          "capacity",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "VehicleRead"
+      },
+      "VehicleUpdate": {
+        "properties": {
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "reg_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reg Number"
+          },
+          "registration_docs": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Registration Docs"
+          },
+          "insurance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Insurance"
+          },
+          "capacity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Capacity"
+          }
+        },
+        "type": "object",
+        "title": "VehicleUpdate"
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
