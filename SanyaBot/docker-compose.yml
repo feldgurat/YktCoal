@@ -1,0 +1,8 @@
+services:
+  telegram-bot:
+    build: .
+    env_file:
+      - .env
+    restart: unless-stopped
+    # Если User/Order-сервисы в той же docker-сети, добавьте сюда
+    # networks/depends_on или подключите внешнюю сеть бэкенда.
