@@ -1,4 +1,3 @@
-// components/PhoneForm.jsx
 import { useState } from 'react';
 import api from '../api';
 import { Link } from "react-router-dom";
@@ -17,8 +16,8 @@ function PhoneForm({ onCodeSent }) {
         try {
             const response = await api.post(AUTH.SEND_CODE, { phone });
         onCodeSent({ 
-        ...response.data,   // то, что вернул бэкенд (может быть code, session_id и т.д.)
-        userPhone: phone    // исходный номер, который ввёл пользователь
+        ...response.data,   
+        userPhone: phone    
         });
         } catch (err) {
             const message = err.response?.data?.detail || 'Ошибка при отправке кода';

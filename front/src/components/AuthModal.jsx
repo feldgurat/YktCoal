@@ -1,4 +1,3 @@
-// src/components/AuthModal.jsx
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 
@@ -9,7 +8,7 @@ import { login } from '../store/authSlice';
 
 function AuthModal({ isOpen, onClose, onSuccess }) {
   const dispatch = useDispatch();
-  const [step, setStep] = useState('phone'); // 'phone' | 'register' | 'code'
+  const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState(null);
   const [code, setCode] = useState(null);
   const [error, setError] = useState('');

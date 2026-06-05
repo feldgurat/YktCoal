@@ -12,19 +12,16 @@ import markerIcon from '../assets/marker.png';
 
 const MapComponent = () => {
     const mapRef = useRef();
-    //const [map, setMap] = useState(null);
     const [selectedCoords, setSelectedCoords] = useState(null);
 
     const markerRef = useRef(new Feature()); 
 
     useEffect(() => {
-    // 1. Настройка стиля маркера (иконки)
         markerRef.current.setStyle(
             new Style({
                 image: new Icon({
-                    anchor: [0.5, 1], // Точка привязки: низ-центр иконки
-                    scale: 0.05,      // Размер иконки (подберите под свою картинку)
-                    // Можно использовать URL любой иконки или локальный файл
+                    anchor: [0.5, 1],
+                    scale: 0.05,      
                     src: markerIcon, 
                 }),
             })
@@ -49,17 +46,12 @@ const MapComponent = () => {
         });
 
         initialMap.on('click', (event) => {
-            const coords = event.coordinate; // Координаты в проекции карты
-            // Перемещаем маркер в точку клика
+            const coords = event.coordinate; 
             markerRef.current.setGeometry(new Point(coords));
-            // Сохраняем читаемые координаты [lon, lat] для UI/Бэкенда
             const lonLat = toLonLat(coords);
             setSelectedCoords(lonLat);
         });
 
-        //setMap(initialMap);
-
-        // Очистка при размонтировании компонента
         return () => initialMap.setTarget(null);
     }, []);
 
@@ -67,7 +59,6 @@ const MapComponent = () => {
         <div className="flex flex-col items-center p-4">
         <h2 className="text-xl font-bold mb-4">Выбор точки доставки (Якутск)</h2>
         
-        {/* Контейнер карты с использованием Tailwind CSS */}
         <div 
             ref={mapRef} 
             className="w-full h-[500px] rounded-lg shadow-lg border border-gray-300 mb-4"

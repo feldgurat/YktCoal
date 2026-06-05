@@ -1,4 +1,3 @@
-// src/pages/Profile.jsx
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -6,8 +5,6 @@ import MapComponent from '../components/MapComponent';
 import { logout, selectUser } from '../store/authSlice';
 
 function Profile() {
-  // Пользователь уже загружен при старте (bootstrapAuth) или после логина —
-  // здесь просто читаем из store.
   const user = useSelector(selectUser);
   const dispatch = useDispatch();
   const navigate = useNavigate();

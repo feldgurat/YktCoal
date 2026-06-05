@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
@@ -23,15 +22,8 @@ function Login() {
     setStep('code');
   };
 
-  // tokens = ответ /sign-in-code-answer = { access_token }
-  // refresh-кука к этому моменту уже стоит у браузера.
   const handleLogin = async (tokens) => {
     try {
-      // .unwrap() превращает результат thunk'а в обычный промис:
-      // если thunk зарезолвился — получим payload, если упал —
-      // нормальное исключение. Без unwrap thunk всегда «успешен»
-      // с точки зрения dispatch (он возвращает action), и ошибки
-      // придётся ловить через .meta.requestStatus — это менее удобно.
       await dispatch(login(tokens.access_token)).unwrap();
       const redirectTo = location.state?.from?.pathname || '/profile';
       navigate(redirectTo, { replace: true });

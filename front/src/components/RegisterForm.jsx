@@ -25,8 +25,8 @@ function RegisterForm({ onRegSuccess }) {
                 address });
 
         onRegSuccess({ 
-        ...response.data,   // то, что вернул бэкенд (может быть code, session_id и т.д.)
-        userPhone: phone    // исходный номер, который ввёл пользователь
+        ...response.data,
+        userPhone: phone
         });
 
         } catch (err) {
@@ -79,14 +79,6 @@ return (
             required
             className='font-montserrat bg-gray-200 p-1 rounded-[3px] focus:outline-none focus:ring-0'
         />
-        {/* <input
-            type="text"
-            value={tg}
-            onChange={(e) => setTg(e.target.value)}
-            placeholder="Введите TG USER ID"
-            required
-            className='font-montserrat bg-gray-200 p-1 rounded-[3px] focus:outline-none focus:ring-0'
-        /> */}
         <input
             type="text"
             value={address}

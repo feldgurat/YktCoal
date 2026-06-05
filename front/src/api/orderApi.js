@@ -1,8 +1,3 @@
-// src/api/orderApi.js
-// Отдельный axios-инстанс для Order-микросервиса (порт 8001).
-// Повторяет ту же логику перехвата токенов, что и основной api.js,
-// но направлен на другой хост.
-
 import axios from 'axios';
 import { AUTH } from './endpoints';
 import {
@@ -20,7 +15,6 @@ const orderApi = axios.create({
   withCredentials: true,
 });
 
-// ── Request: подставляем Bearer-токен ────────────────────────────
 orderApi.interceptors.request.use((config) => {
   const token = getAccessToken();
   if (token) {
@@ -29,7 +23,6 @@ orderApi.interceptors.request.use((config) => {
   return config;
 });
 
-// ── Response: обработка 401 + refresh ───────────────────────────
 let isRefreshing = false;
 let waiters = [];
 
