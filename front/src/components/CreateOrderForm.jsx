@@ -1,4 +1,3 @@
-// src/components/CreateOrderForm.jsx
 import { useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import 'ol/ol.css';
@@ -30,7 +29,6 @@ function CreateOrderForm({ onCreated }) {
   const createStatus = useSelector(selectCreateStatus);
   const createError = useSelector(selectCreateError);
 
-  // ── Форма ──────────────────────────────────────────────────
   const [resourceId, setResourceId] = useState('');
   const [volume, setVolume] = useState('');
   const [destAddress, setDestAddress] = useState('');
@@ -38,7 +36,6 @@ function CreateOrderForm({ onCreated }) {
   const [comment, setComment] = useState('');
   const [coords, setCoords] = useState(null); // [lon, lat]
 
-  // ── Карта ──────────────────────────────────────────────────
   const mapRef = useRef(null);
   const markerRef = useRef(new Feature());
 
@@ -48,7 +45,6 @@ function CreateOrderForm({ onCreated }) {
     }
   }, [dispatch, resourcesStatus]);
 
-  // Инициализация карты
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -87,7 +83,6 @@ function CreateOrderForm({ onCreated }) {
     return () => map.setTarget(null);
   }, []);
 
-  // Сброс формы после успешного создания
   useEffect(() => {
     if (createStatus === 'succeeded') {
       setResourceId('');
@@ -105,7 +100,6 @@ function CreateOrderForm({ onCreated }) {
     }
   }, [createStatus, dispatch, onCreated]);
 
-  // ── Справочная цена (для ориентира, итоговую назначает водитель) ──
   const selectedResource = resources.find((r) => r.id === resourceId);
   const refPrice =
     selectedResource && volume
@@ -186,7 +180,6 @@ function CreateOrderForm({ onCreated }) {
           </select>
         </div>
 
-        {/* Объём */}
         <div>
           <label className="font-montserrat font-semibold text-sm block mb-1">
             Объём ({selectedResource?.unit || 'тонна'}){' '}
@@ -216,7 +209,6 @@ function CreateOrderForm({ onCreated }) {
           )}
         </div>
 
-        {/* Адрес доставки */}
         <div>
           <label className="font-montserrat font-semibold text-sm block mb-1">
             Адрес доставки <span className="text-red-500">*</span>
@@ -228,11 +220,10 @@ function CreateOrderForm({ onCreated }) {
             placeholder="Ул. Ленина, д. 10"
             required
             className="w-full font-montserrat bg-gray-100 p-2.5 rounded-md border border-gray-300
-                       focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
           />
         </div>
 
-        {/* Карта */}
         <div>
           <label className="font-montserrat font-semibold text-sm block mb-1">
             Укажите точку на карте <span className="text-red-500">*</span>
@@ -248,7 +239,6 @@ function CreateOrderForm({ onCreated }) {
           )}
         </div>
 
-        {/* Дата доставки */}
         <div>
           <label className="font-montserrat font-semibold text-sm block mb-1">
             Желаемая дата доставки <span className="text-red-500">*</span>
@@ -259,11 +249,10 @@ function CreateOrderForm({ onCreated }) {
             value={deliveryDate}
             onChange={(e) => setDeliveryDate(e.target.value)}
             className="w-full font-montserrat bg-gray-100 p-2.5 rounded-md border border-gray-300
-                       focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
+                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent"
           />
         </div>
 
-        {/* Комментарий */}
         <div>
           <label className="font-montserrat font-semibold text-sm block mb-1">
             Комментарий
@@ -275,17 +264,16 @@ function CreateOrderForm({ onCreated }) {
             maxLength={1000}
             rows={3}
             className="w-full font-montserrat bg-gray-100 p-2.5 rounded-md border border-gray-300
-                       focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-y"
+                      focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-y"
           />
         </div>
 
-        {/* Кнопка */}
         <button
           type="submit"
           disabled={isSubmitting || !resourceId || !volume || !destAddress}
           className="w-full font-montserrat font-semibold text-white bg-blue-500
-                     py-3 rounded-lg hover:bg-blue-600 transition-colors
-                     disabled:opacity-50 disabled:cursor-not-allowed"
+                    py-3 rounded-lg hover:bg-blue-600 transition-colors
+                    disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? 'Отправка...' : 'Создать заявку'}
         </button>

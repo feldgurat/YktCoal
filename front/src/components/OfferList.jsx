@@ -1,4 +1,3 @@
-// src/components/OfferList.jsx
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {
@@ -8,12 +7,11 @@ import {
   selectOffersByOrder,
 } from '../store/orderSlice';
 
-// Цвета статусов офферов
 const OFFER_STATUS_COLORS = {
-  1: 'bg-amber-100 text-amber-800',   // Ожидает
-  2: 'bg-green-100 text-green-800',   // Принят
-  3: 'bg-red-100 text-red-700',       // Отклонён
-  4: 'bg-gray-100 text-gray-600',     // Отозван
+  1: 'bg-amber-100 text-amber-800',   
+  2: 'bg-green-100 text-green-800',   
+  3: 'bg-red-100 text-red-700',       
+  4: 'bg-gray-100 text-gray-600',     
 };
 
 function OfferList({ orderId, orderStatus }) {
@@ -74,7 +72,6 @@ function OfferList({ orderId, orderStatus }) {
     );
   }
 
-  // Заказ в статусе NEW (1) — можно принимать/отклонять
   const canManage = orderStatus === 1;
 
   return (
@@ -120,15 +117,14 @@ function OfferList({ orderId, orderStatus }) {
                 <p className="text-xs text-gray-500 mt-1">{offer.comment}</p>
               )}
 
-              {/* Кнопки действий — только для pending офферов и если заказ ещё NEW */}
               {isPending && canManage && (
                 <div className="flex gap-2 mt-2">
                   <button
                     onClick={() => handleAccept(offer.id)}
                     disabled={isProcessing}
                     className="text-xs font-semibold text-white bg-green-500 px-3 py-1 rounded
-                               hover:bg-green-600 transition-colors
-                               disabled:opacity-50 disabled:cursor-not-allowed"
+                              hover:bg-green-600 transition-colors
+                              disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isProcessing ? '...' : 'Принять'}
                   </button>
@@ -136,8 +132,8 @@ function OfferList({ orderId, orderStatus }) {
                     onClick={() => handleReject(offer.id)}
                     disabled={isProcessing}
                     className="text-xs font-semibold text-red-600 bg-red-50 px-3 py-1 rounded
-                               border border-red-200 hover:bg-red-100 transition-colors
-                               disabled:opacity-50 disabled:cursor-not-allowed"
+                              border border-red-200 hover:bg-red-100 transition-colors
+                              disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isProcessing ? '...' : 'Отклонить'}
                   </button>

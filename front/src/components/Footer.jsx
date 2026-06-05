@@ -48,14 +48,13 @@ export const Footer = () => {
         onSuccess={handleAuthSuccess}
       />
       <div className="max-w-7xl mx-auto h-full flex items-center justify-between">
-        {/* Left column: Contact info with icons */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 text-blue-500">
               <PinIcon className="w-3 h-3 " />
             </div>
             <span className="font-montserrat text-xs text-white">
-              село Тулагино, ул. Аргунова, Александра
+              село Тулагино, ул. Юбилейная, д. 1
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -63,7 +62,7 @@ export const Footer = () => {
               <PhoneIcon className="w-3 h-3 " />
             </div>
             <span className="font-montserrat text-xs text-white">
-              +7 (9219123) 912912 12383
+              +7 (924) 369 69 09 
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -76,7 +75,6 @@ export const Footer = () => {
           </div>
         </div>
 
-        {/* Middle-left column: White links */}
         <div className="space-y-2">
           <button onClick={handleAuthClick} className="block font-montserrat text-xs text-white hover:underline underline-offset-4">
             {isAuthenticated ? 'Личный кабинет' : 'Войти в систему'}
@@ -89,7 +87,6 @@ export const Footer = () => {
           </a>
         </div>
 
-        {/* Middle-right column: Gray links */}
         <div className="space-y-2">
           <a href="#" className="block font-montserrat text-xs text-[#A1A1A1] hover:underline underline-offset-4">
             Согласие на обработку персональных данных
@@ -102,7 +99,6 @@ export const Footer = () => {
           </a>
         </div>
 
-        {/* Right column: Logo and subtitle */}
         <div className="flex flex-col items-end">
           <a href="#" className="font-['Dela_Gothic_One'] text-4xl text-white leading-none">
             УгольЯкт

@@ -43,22 +43,16 @@ export const bootstrapAuth = createAsyncThunk(
   },
 );
 
-// Вход после успешного ввода SMS-кода. На входе access_token из
-// тела ответа /sign-in-code-answer. Refresh-кука уже стоит у браузера.
 export const login = createAsyncThunk('auth/login', async (accessToken) => {
   setAccessToken(accessToken);
   const me = await api.get(USERS.GET_ME);
   return me.data;
 });
 
-// Выход: говорим бэку забыть сессию (он добавит refresh-токен в
-// blacklist и удалит куку) и чистим клиентское состояние. Если бэк
-// не ответил — всё равно чистим локально.
 export const logout = createAsyncThunk('auth/logout', async () => {
   try {
     await api.post(AUTH.LOGOUT);
   } catch {
-    // игнорируем — клиентский logout важнее
   }
   clearAccessToken();
 });
@@ -68,15 +62,12 @@ export const logout = createAsyncThunk('auth/logout', async () => {
 const initialState = {
   status: 'loading', // 'loading' | 'authenticated' | 'guest'
   user: null,
-  bootstrapInFlight: false, // вспомогательный флаг для condition выше
+  bootstrapInFlight: false, 
 };
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
-  // Обычные синхронные reducers — для редких случаев, когда нужно
-  // обновить состояние без сетевого запроса (например, api-интерцептор
-  // получил неудачный refresh и хочет сбросить нас в guest).
   reducers: {
     setGuest(state) {
       state.status = 'guest';
@@ -87,12 +78,8 @@ const authSlice = createSlice({
       state.user = action.payload;
     },
   },
-  // extraReducers реагируют на экшены, генерируемые createAsyncThunk.
-  // Здесь мы просто декларативно описываем, как меняется state на
-  // каждый этап жизни запроса.
   extraReducers: (builder) => {
     builder
-      // bootstrap
       .addCase(bootstrapAuth.pending, (state) => {
         state.status = 'loading';
         state.bootstrapInFlight = true;
@@ -107,19 +94,15 @@ const authSlice = createSlice({
         state.user = null;
         state.bootstrapInFlight = false;
       })
-      // login
       .addCase(login.fulfilled, (state, action) => {
         state.status = 'authenticated';
         state.user = action.payload;
       })
       .addCase(login.rejected, (state) => {
-        // Ошибка после ввода SMS-кода — редкий случай, но обрабатываем:
-        // сбрасываем токен и переводим в guest, чтобы UI не залип.
         state.status = 'guest';
         state.user = null;
         clearAccessToken();
       })
-      // logout
       .addCase(logout.fulfilled, (state) => {
         state.status = 'guest';
         state.user = null;
@@ -129,11 +112,6 @@ const authSlice = createSlice({
 
 export const { setGuest, setUser } = authSlice.actions;
 
-// ── Селекторы ────────────────────────────────────────────────────
-// Селекторы — хорошая практика: компоненты не лезут руками в форму
-// state.auth.*, а подписываются через селектор. Если завтра форма
-// state поменяется (например, появится feature-флаг внутри auth) —
-// поправим только селекторы, компоненты останутся как есть.
 
 export const selectAuthStatus = (state) => state.auth.status;
 export const selectUser = (state) => state.auth.user;

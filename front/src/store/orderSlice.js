@@ -1,12 +1,8 @@
-// src/store/orderSlice.js
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import orderApi from '../api/orderApi';
 import { ORDERS, RESOURCES, OFFERS } from '../api/endpoints';
 
-// ── Async thunks ─────────────────────────────────────────────────
-
-// Загрузить список ресурсов (типы угля) — нужны для формы создания заявки.
 export const fetchResources = createAsyncThunk(
   'orders/fetchResources',
   async () => {
@@ -15,7 +11,6 @@ export const fetchResources = createAsyncThunk(
   },
 );
 
-// Загрузить заявки текущего пользователя.
 export const fetchMyOrders = createAsyncThunk(
   'orders/fetchMyOrders',
   async () => {
@@ -24,7 +19,6 @@ export const fetchMyOrders = createAsyncThunk(
   },
 );
 
-// Создать новую заявку.
 export const createOrder = createAsyncThunk(
   'orders/createOrder',
   async (orderData, { rejectWithValue }) => {
@@ -44,7 +38,6 @@ export const createOrder = createAsyncThunk(
   },
 );
 
-// Отменить заявку.
 export const cancelOrder = createAsyncThunk(
   'orders/cancelOrder',
   async (orderId, { rejectWithValue }) => {
@@ -60,9 +53,7 @@ export const cancelOrder = createAsyncThunk(
   },
 );
 
-// ── Offer thunks ─────────────────────────────────────────────────
 
-// Загрузить предложения для конкретного заказа.
 export const fetchOrderOffers = createAsyncThunk(
   'orders/fetchOrderOffers',
   async (orderId) => {
@@ -71,7 +62,6 @@ export const fetchOrderOffers = createAsyncThunk(
   },
 );
 
-// Клиент принимает предложение водителя.
 export const acceptOffer = createAsyncThunk(
   'orders/acceptOffer',
   async ({ offerId, orderId }, { rejectWithValue }) => {
@@ -87,7 +77,6 @@ export const acceptOffer = createAsyncThunk(
   },
 );
 
-// Клиент отклоняет предложение водителя.
 export const rejectOffer = createAsyncThunk(
   'orders/rejectOffer',
   async ({ offerId, orderId }, { rejectWithValue }) => {
@@ -103,19 +92,17 @@ export const rejectOffer = createAsyncThunk(
   },
 );
 
-// ── Slice ────────────────────────────────────────────────────────
 
 const initialState = {
   resources: [],
-  resourcesStatus: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+  resourcesStatus: 'idle', 
 
   orders: [],
   ordersStatus: 'idle',
 
-  createStatus: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
+  createStatus: 'idle',
   createError: null,
 
-  // Предложения по заказам: { [orderId]: { status, offers: [], error } }
   offersByOrder: {},
 };
 
@@ -130,7 +117,6 @@ const orderSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // ── fetchResources ──
       .addCase(fetchResources.pending, (state) => {
         state.resourcesStatus = 'loading';
       })
@@ -142,7 +128,6 @@ const orderSlice = createSlice({
         state.resourcesStatus = 'failed';
       })
 
-      // ── fetchMyOrders ──
       .addCase(fetchMyOrders.pending, (state) => {
         state.ordersStatus = 'loading';
       })
@@ -154,7 +139,6 @@ const orderSlice = createSlice({
         state.ordersStatus = 'failed';
       })
 
-      // ── createOrder ──
       .addCase(createOrder.pending, (state) => {
         state.createStatus = 'loading';
         state.createError = null;
@@ -168,7 +152,6 @@ const orderSlice = createSlice({
         state.createError = action.payload || 'Неизвестная ошибка';
       })
 
-      // ── cancelOrder ──
       .addCase(cancelOrder.fulfilled, (state, action) => {
         const updated = action.payload;
         const idx = state.orders.findIndex((o) => o.id === updated.id);
@@ -177,7 +160,6 @@ const orderSlice = createSlice({
         }
       })
 
-      // ── fetchOrderOffers ──
       .addCase(fetchOrderOffers.pending, (state, action) => {
         const orderId = action.meta.arg;
         state.offersByOrder[orderId] = {
@@ -202,17 +184,14 @@ const orderSlice = createSlice({
         };
       })
 
-      // ── acceptOffer — после принятия перезагрузим заказы и офферы ──
       .addCase(acceptOffer.fulfilled, (state, action) => {
         const { offer, orderId } = action.payload;
-        // Обновляем оффер в локальном кэше
         const cached = state.offersByOrder[orderId];
         if (cached?.offers) {
           state.offersByOrder[orderId].offers = cached.offers.map((o) =>
             o.id === offer.id ? offer : { ...o, status: o.status === 1 ? 3 : o.status, status_label: o.status === 1 ? 'Отклонён' : o.status_label },
           );
         }
-        // Обновляем заказ: он теперь ACCEPTED
         const idx = state.orders.findIndex((o) => o.id === orderId);
         if (idx !== -1) {
           state.orders[idx] = {
@@ -226,7 +205,6 @@ const orderSlice = createSlice({
         }
       })
 
-      // ── rejectOffer ──
       .addCase(rejectOffer.fulfilled, (state, action) => {
         const { offer, orderId } = action.payload;
         const cached = state.offersByOrder[orderId];
@@ -241,7 +219,6 @@ const orderSlice = createSlice({
 
 export const { resetCreateStatus } = orderSlice.actions;
 
-// ── Селекторы ────────────────────────────────────────────────────
 export const selectResources = (state) => state.orders.resources;
 export const selectResourcesStatus = (state) => state.orders.resourcesStatus;
 export const selectMyOrders = (state) => state.orders.orders;

@@ -74,7 +74,6 @@ export const Landing = () => {
     },
   ];
 
-  // Если уже залогинен → сразу в профиль; иначе → открываем модалку.
   const handleAuthButtonClick = () => {
     if (isAuthenticated) {
       navigate('/profile');
@@ -220,13 +219,11 @@ export const Landing = () => {
         <div className="absolute inset-0 bg-black/75"></div>
 
         <div className="relative z-10 max-w-[1280px] mx-auto px-10">
-          {/* заголовок */}
           <div className="flex flex-col items-center text-center gap-3">
             <a className="font-dela text-[44px] text-white">Как это работает?</a>
             <hr className="border-none h-1 bg-blue-500 w-50" />
           </div>
 
-          {/* шаги */}
           <div className="mt-16 grid md:grid-cols-3 gap-px bg-white/10 rounded-2xl overflow-hidden border border-white/10">
             {steps.map((s, i) => (
               <div
@@ -263,13 +260,10 @@ export const Landing = () => {
                   {i < 2 && <ArrowRight className="w-5 h-5 text-white/30 hidden md:block" />}
                 </div>
 
-                {/* hover-акцент слева */}
                 <div className="absolute left-0 top-0 h-full w-[3px] bg-blue-500 scale-y-0 group-hover:scale-y-100 origin-top transition-transform duration-300"></div>
               </div>
             ))}
           </div>
-
-          {/* CTA-стрип */}
           <div className="mt-14 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 bg-white/[0.04] border border-white/10 rounded-2xl p-7">
             <div>
               <h4 className="font-['Dela_Gothic_One'] text-white text-[22px] leading-tight">
@@ -338,7 +332,7 @@ export const Landing = () => {
                         href="tel:+79219123912"
                         className="block mt-1 font-montserrat font-semibold text-[18px] text-white hover:text-blue-300 transition-colors"
                       >
-                        +7 (9219123) 912 12 12
+                        +7 (924) 369 69 09
                       </a>
                     </div>
                   </li>
@@ -354,7 +348,7 @@ export const Landing = () => {
                         href="mailto:infocoalyit@mail.ru"
                         className="block mt-1 font-montserrat font-semibold text-[18px] text-white hover:text-blue-300 transition-colors"
                       >
-                        infocoalyit@mail.ru
+                        infocoalykt@mail.ru
                       </a>
                     </div>
                   </li>
@@ -384,7 +378,6 @@ export const Landing = () => {
               </div>
             </div>
 
-            {/* ПРАВО — форма */}
             <div className="lg:col-span-3 bg-white p-10 lg:p-12">
               <div className="flex items-baseline justify-between flex-wrap gap-2">
                 <h3 className="font-['Dela_Gothic_One'] text-[28px] text-black leading-[1.2]">

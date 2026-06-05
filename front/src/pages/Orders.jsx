@@ -1,4 +1,3 @@
-// src/pages/Orders.jsx
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
@@ -21,9 +20,7 @@ export const Orders = () => {
   }, [dispatch]);
 
   const handleOrderCreated = () => {
-    // Форму можно свернуть после создания
     setShowForm(false);
-    // Перезагружаем список, чтобы гарантировать актуальность
     dispatch(fetchMyOrders());
   };
 
@@ -40,14 +37,12 @@ export const Orders = () => {
         </button>
       </div>
 
-      {/* Форма создания */}
       {showForm && (
         <div className="mb-8 max-w-2xl">
           <CreateOrderForm onCreated={handleOrderCreated} />
         </div>
       )}
 
-      {/* Список заявок */}
       {ordersStatus === 'loading' && (
         <p className="font-montserrat text-gray-500">Загрузка заявок...</p>
       )}
