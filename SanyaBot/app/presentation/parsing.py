@@ -1,4 +1,5 @@
 """Парсинг пользовательского ввода (числа, даты)."""
+
 from __future__ import annotations
 
 from datetime import datetime

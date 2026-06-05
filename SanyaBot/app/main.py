@@ -3,6 +3,7 @@
 Связывает aiogram (Bot/Dispatcher) с контейнером зависимостей и роутерами.
 Запуск в режиме long polling.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -62,5 +63,5 @@ async def main() -> None:
 if __name__ == "__main__":
     try:
         asyncio.run(main())
-    except (KeyboardInterrupt, SystemExit):
+    except KeyboardInterrupt, SystemExit:
         pass

@@ -1,12 +1,10 @@
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
+from enum import StrEnum
 
 from sqlalchemy import Column, DateTime
 from sqlmodel import Field, SQLModel
-
-
-from enum import StrEnum
 
 
 class OrderStatus(StrEnum):

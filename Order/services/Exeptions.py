@@ -37,9 +37,7 @@ class ResourceNotFoundError(AppException):
 
 
 class ResourceAlreadyExistsError(AppException):
-    def __init__(
-        self, message: str = "Ресурс с таким названием уже существует"
-    ) -> None:
+    def __init__(self, message: str = "Ресурс с таким названием уже существует") -> None:
         super().__init__(message, status_code=409)
 
 
@@ -57,9 +55,7 @@ class OrderAccessDeniedError(AppException):
 
 
 class OrderWrongStatusError(AppException):
-    def __init__(
-        self, message: str = "Действие недоступно для текущего статуса заказа"
-    ) -> None:
+    def __init__(self, message: str = "Действие недоступно для текущего статуса заказа") -> None:
         super().__init__(message, status_code=409)
 
 
@@ -72,9 +68,7 @@ class OfferNotFoundError(AppException):
 
 
 class OfferAccessDeniedError(AppException):
-    def __init__(
-        self, message: str = "Нет прав на это действие с предложением"
-    ) -> None:
+    def __init__(self, message: str = "Нет прав на это действие с предложением") -> None:
         super().__init__(message, status_code=403)
 
 
@@ -86,7 +80,5 @@ class OfferWrongStatusError(AppException):
 
 
 class OfferAlreadyExistsError(AppException):
-    def __init__(
-        self, message: str = "У вас уже есть активное предложение на этот заказ"
-    ) -> None:
+    def __init__(self, message: str = "У вас уже есть активное предложение на этот заказ") -> None:
         super().__init__(message, status_code=409)

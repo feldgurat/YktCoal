@@ -17,9 +17,7 @@ _r = OfferService.to_read
 
 
 @router.post("", response_model=OfferRead, status_code=201)
-async def create_offer(
-    data: OfferCreate, current_user: CurrentDriverDep, service: OfferServiceDep
-):
+async def create_offer(data: OfferCreate, current_user: CurrentDriverDep, service: OfferServiceDep):
     offer = await service.create(current_user.id, data)
     return _r(offer)
 

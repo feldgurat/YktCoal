@@ -1,10 +1,10 @@
 import uuid
 
-from data.schemas.common import MessageResponse
 from fastapi import APIRouter, Depends
 
 from api.routes import API_V1_PREFIX, RESOURCES
 from api.v1.dependencies import CurrentAdminDep, get_current_user
+from data.schemas.common import MessageResponse
 from data.schemas.Resource import ResourceCreate, ResourceRead, ResourceUpdate
 from services.ResourceService import ResourceService, ResourceServiceDep
 

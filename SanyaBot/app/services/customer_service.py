@@ -3,6 +3,7 @@
 Объединяет действия пользователя-заказчика над каталогом, заказами и
 полученными предложениями. Зависит от абстракций-шлюзов (DIP).
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence

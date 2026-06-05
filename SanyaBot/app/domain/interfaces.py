@@ -5,6 +5,7 @@
 узкие и разбиты по контекстам (принцип разделения интерфейсов, ISP),
 чтобы сервис не зависел от методов, которые ему не нужны.
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence

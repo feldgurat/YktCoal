@@ -94,9 +94,7 @@ class OrderService:
         )
         return await self._orders.create(o)
 
-    async def update(
-        self, user_id: uuid.UUID, order_id: uuid.UUID, data: OrderUpdate
-    ) -> Order:
+    async def update(self, user_id: uuid.UUID, order_id: uuid.UUID, data: OrderUpdate) -> Order:
         o = await self.get(order_id)
         if o.user_id != user_id:
             raise OrderAccessDeniedError("Можно редактировать только свои заказы")
@@ -126,9 +124,7 @@ class OrderService:
         if order.user_id != user_id:
             raise OrderAccessDeniedError("Принять предложение может только заказчик")
         if order.status != OrderStatus.NEW:
-            raise OrderWrongStatusError(
-                "Принять предложение можно только для нового заказа"
-            )
+            raise OrderWrongStatusError("Принять предложение можно только для нового заказа")
 
         offer = await self._offers.get_by_id(offer_id)
         if offer is None or offer.order_id != order.id:
@@ -177,9 +173,7 @@ class OrderService:
         if order.user_id != user_id:
             raise OrderAccessDeniedError("Подтвердить выполнение может только заказчик")
         if order.status != OrderStatus.IN_PROCESS:
-            raise OrderWrongStatusError(
-                "Подтвердить выполнение можно только для заказа в работе"
-            )
+            raise OrderWrongStatusError("Подтвердить выполнение можно только для заказа в работе")
         order.status = OrderStatus.COMPLETED
         order.updated_at = datetime.now(UTC)
         await self._orders.flush()
@@ -194,9 +188,7 @@ class OrderService:
         if order.user_id != user_id:
             raise OrderAccessDeniedError("Отменить заказ может только заказчик")
         if order.status not in (OrderStatus.NEW, OrderStatus.ACCEPTED):
-            raise OrderWrongStatusError(
-                "Отменить можно только заказ в статусе NEW или ACCEPTED"
-            )
+            raise OrderWrongStatusError("Отменить можно только заказ в статусе NEW или ACCEPTED")
 
         now = datetime.now(UTC)
         for off in await self._offers.get_pending_for_order(order.id):
@@ -208,9 +200,7 @@ class OrderService:
         await self._orders.flush()
         return order
 
-    async def driver_withdraw(
-        self, driver_user_id: uuid.UUID, order_id: uuid.UUID
-    ) -> Order:
+    async def driver_withdraw(self, driver_user_id: uuid.UUID, order_id: uuid.UUID) -> Order:
         """
         Водитель отказался от уже принятого заказа (Order=ACCEPTED, ещё не начал).
         Заказ возвращается в NEW, accepted_driver и final_price сбрасываются.
@@ -231,8 +221,7 @@ class OrderService:
             (
                 o
                 for o in all_offers
-                if o.driver_user_id == driver_user_id
-                and o.status == OfferStatus.ACCEPTED
+                if o.driver_user_id == driver_user_id and o.status == OfferStatus.ACCEPTED
             ),
             None,
         )

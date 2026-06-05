@@ -1,10 +1,10 @@
-from data.schemas.common import MessageResponse
 from fastapi import APIRouter
 from sqlmodel import SQLModel
 
 from api.routes import ADMIN, API_V1_PREFIX
 from api.v1.dependencies import CurrentAdminDep
 from data.Database import engine
+from data.schemas.common import MessageResponse
 
 router = APIRouter(prefix=f"{API_V1_PREFIX}{ADMIN}", tags=["Debug"])
 

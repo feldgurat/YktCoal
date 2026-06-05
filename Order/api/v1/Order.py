@@ -28,9 +28,7 @@ _r_offer = OfferService.to_read
 
 
 @router.post("", response_model=OrderRead, status_code=201)
-async def create_order(
-    data: OrderCreate, current_user: CurrentUserDep, service: OrderServiceDep
-):
+async def create_order(data: OrderCreate, current_user: CurrentUserDep, service: OrderServiceDep):
     o = await service.create(current_user.id, data)
     return _r(o)
 
@@ -42,9 +40,7 @@ async def my_orders(current_user: CurrentUserDep, service: OrderServiceDep):
 
 
 @router.get("/{order_id}", response_model=OrderRead)
-async def get_order(
-    order_id: uuid.UUID, _user: CurrentUserDep, service: OrderServiceDep
-):
+async def get_order(order_id: uuid.UUID, _user: CurrentUserDep, service: OrderServiceDep):
     o = await service.get(order_id)
     return _r(o)
 
@@ -90,9 +86,7 @@ async def complete_order(
 
 
 @router.post("/{order_id}/cancel", response_model=OrderRead)
-async def cancel_order(
-    order_id: uuid.UUID, current_user: CurrentUserDep, service: OrderServiceDep
-):
+async def cancel_order(order_id: uuid.UUID, current_user: CurrentUserDep, service: OrderServiceDep):
     o = await service.cancel(current_user.id, order_id)
     return _r(o)
 

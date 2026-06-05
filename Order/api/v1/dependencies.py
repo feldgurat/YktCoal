@@ -37,9 +37,7 @@ async def get_current_user(
         )
 
     try:
-        payload = auth_service.decode_token(
-            credentials.credentials, expected_type="access"
-        )
+        payload = auth_service.decode_token(credentials.credentials, expected_type="access")
     except AppException as exc:
         raise HTTPException(
             status_code=exc.status_code,
@@ -57,7 +55,7 @@ async def get_current_user(
 
     try:
         user_id = uuid.UUID(payload["sub"])
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Невалидный токен",

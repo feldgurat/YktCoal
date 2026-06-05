@@ -1,4 +1,5 @@
 """Конфигурация бота. Единственный источник настроек (SRP)."""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 

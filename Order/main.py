@@ -12,7 +12,6 @@ from api.v1.Resource import router as resources_router
 from api.v1.Telegram import router as telegram_router
 from config import settings
 from data.Database import create_tables, engine
-
 from data.Redis import close_redis, init_redis
 from services.Exeptions import AppException
 

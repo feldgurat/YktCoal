@@ -3,6 +3,7 @@
 Изолирует доменный слой от формата API: если бэкенд изменит имена полей,
 правки коснутся только этого модуля (SRP).
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -57,9 +58,7 @@ def to_order(data: dict[str, Any]) -> Order:
         id=str(data["id"]),
         user_id=str(data["user_id"]),
         accepted_driver_id=(
-            str(data["accepted_driver_id"])
-            if data.get("accepted_driver_id")
-            else None
+            str(data["accepted_driver_id"]) if data.get("accepted_driver_id") else None
         ),
         resource_id=str(data["resource_id"]),
         dest_address=data["dest_address"],

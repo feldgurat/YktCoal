@@ -1,4 +1,5 @@
 """Хендлеры заказчика: создание заказа, просмотр заказов и предложений."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -62,9 +63,7 @@ async def start_new_order(
         return
 
     await state.set_state(CreateOrder.choosing_resource)
-    await callback.message.answer(
-        "Выберите вид угля:", reply_markup=resources_kb(resources)
-    )
+    await callback.message.answer("Выберите вид угля:", reply_markup=resources_kb(resources))
     await callback.answer()
 
 
@@ -145,16 +144,13 @@ async def enter_comment(
         dest_address=data["dest_address"],
         volume=volume,
         cost=cost,
-        requested_delivery_date=datetime.fromisoformat(
-            data["requested_delivery_date"]
-        ),
+        requested_delivery_date=datetime.fromisoformat(data["requested_delivery_date"]),
         comment=comment,
     )
     order = await customer_service.create_order(user.id, command)
     await state.clear()
     await message.answer(
-        "✅ Заказ создан!\n\n"
-        + fmt.order_card(order, data["resource_name"]),
+        "✅ Заказ создан!\n\n" + fmt.order_card(order, data["resource_name"]),
         reply_markup=main_menu_kb(user),
     )
 
@@ -171,9 +167,7 @@ async def my_orders(
     user = _require(current_user)
     orders = await customer_service.my_orders(user.id)
     if not orders:
-        await callback.message.answer(
-            "У вас пока нет заказов.", reply_markup=back_to_menu_kb()
-        )
+        await callback.message.answer("У вас пока нет заказов.", reply_markup=back_to_menu_kb())
         await callback.answer()
         return
 
@@ -256,8 +250,7 @@ async def complete_order(
     user = _require(current_user)
     order = await customer_service.complete_order(user.id, callback_data.order_id)
     await callback.message.answer(
-        "🏁 Получение подтверждено, заказ выполнен. Спасибо!\n\n"
-        + fmt.order_card(order),
+        "🏁 Получение подтверждено, заказ выполнен. Спасибо!\n\n" + fmt.order_card(order),
         reply_markup=back_to_menu_kb(),
     )
     await callback.answer()

@@ -3,6 +3,7 @@
 Дают безопасную сериализацию данных в inline-кнопки вместо ручного парсинга
 строк, что снижает количество ошибок.
 """
+
 from __future__ import annotations
 
 from aiogram.filters.callback_data import CallbackData

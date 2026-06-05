@@ -1,4 +1,5 @@
 """Хендлеры водителя: доступные заказы, предложения, выполнение рейсов."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -74,8 +75,7 @@ async def start_offer(
     await state.update_data(order_id=callback_data.target_id)
     await state.set_state(CreateOffer.entering_price)
     await callback.message.answer(
-        f"Предложение по заказу #{callback_data.target_id[:8]}.\n"
-        "Введите вашу цену в рублях:"
+        f"Предложение по заказу #{callback_data.target_id[:8]}.\nВведите вашу цену в рублях:"
     )
     await callback.answer()
 
@@ -134,9 +134,7 @@ async def my_offers(
     user = _require_driver(current_user)
     offers = await driver_service.my_offers(user.id)
     if not offers:
-        await callback.message.answer(
-            "У вас пока нет предложений.", reply_markup=back_to_menu_kb()
-        )
+        await callback.message.answer("У вас пока нет предложений.", reply_markup=back_to_menu_kb())
         await callback.answer()
         return
 
@@ -216,8 +214,7 @@ async def withdraw_from_order(
     user = _require_driver(current_user)
     order = await driver_service.withdraw_from_order(user.id, callback_data.order_id)
     await callback.message.answer(
-        "Вы отказались от заказа, он снова доступен другим водителям.\n\n"
-        + fmt.order_card(order),
+        "Вы отказались от заказа, он снова доступен другим водителям.\n\n" + fmt.order_card(order),
         reply_markup=back_to_menu_kb(),
     )
     await callback.answer()

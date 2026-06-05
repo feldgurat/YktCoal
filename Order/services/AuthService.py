@@ -26,9 +26,7 @@ class AuthService:
 
     def decode_token(self, token: str, expected_type: str = "access") -> dict[str, Any]:
         try:
-            payload = jwt.decode(
-                token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM]
-            )
+            payload = jwt.decode(token, settings.JWT_SECRET, algorithms=[settings.JWT_ALGORITHM])
         except jwt.ExpiredSignatureError:
             raise TokenExpiredError() from None
         except jwt.InvalidTokenError:

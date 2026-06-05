@@ -1,4 +1,5 @@
 """Сбор всех роутеров слоя представления в нужном порядке."""
+
 from aiogram import Router
 
 from app.presentation.handlers import customer, driver, start

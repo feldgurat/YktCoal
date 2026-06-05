@@ -4,6 +4,7 @@
 шлюзы, сервисы. Остальной код зависит от абстракций. Это единственное место,
 которое «знает» обо всех слоях, что и требует чистая архитектура.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -32,7 +33,7 @@ class Container:
     _clients: tuple[ApiClient, ...]
 
     @classmethod
-    def build(cls, settings: Settings) -> "Container":
+    def build(cls, settings: Settings) -> Container:
         user_client = ApiClient(
             base_url=settings.USER_SERVICE_URL,
             service_key=settings.INTERNAL_TELEGRAM_SERVICE_KEY,

@@ -4,6 +4,7 @@
 без зависимостей от aiogram, httpx или конкретного бэкенда. Всё остальное
 зависит от этого слоя, а не наоборот.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

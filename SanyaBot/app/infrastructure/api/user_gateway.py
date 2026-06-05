@@ -1,4 +1,5 @@
 """Реализация UserGateway поверх Telegram-эндпоинтов User-сервиса."""
+
 from __future__ import annotations
 
 from app.domain.commands import RegisterUser
@@ -14,9 +15,7 @@ class UserApiGateway:
         self._client = client
 
     async def find_by_telegram_id(self, telegram_user_id: str) -> User | None:
-        data = await self._client.request(
-            "GET", f"{_PREFIX}/by-tg-id/{telegram_user_id}"
-        )
+        data = await self._client.request("GET", f"{_PREFIX}/by-tg-id/{telegram_user_id}")
         return mappers.to_user(data) if data else None
 
     async def find_by_phone(self, phone: str) -> User | None:

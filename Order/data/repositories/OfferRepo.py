@@ -13,9 +13,7 @@ from data.repositories.BaseRepo import BaseRepository
 class OfferRepository(BaseRepository[Offer]):
     async def get_by_order_id(self, order_id: uuid.UUID) -> Sequence[Offer]:
         result = await self._session.exec(
-            select(Offer)
-            .where(Offer.order_id == order_id)
-            .order_by(Offer.created_at.asc())
+            select(Offer).where(Offer.order_id == order_id).order_by(Offer.created_at.asc())
         )
         return result.all()
 

@@ -4,6 +4,7 @@
 дают узкие интерфейсы потребителям (SRP + ISP). Все используют общий
 ApiClient — то есть один HTTP-пул соединений.
 """
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -42,15 +43,11 @@ class OrderApiGateway:
         return mappers.to_order(data)
 
     async def list_by_user(self, user_id: str) -> Sequence[Order]:
-        data = await self._client.request(
-            "GET", f"{_PREFIX}/orders/by-user/{user_id}"
-        )
+        data = await self._client.request("GET", f"{_PREFIX}/orders/by-user/{user_id}")
         return [mappers.to_order(x) for x in data]
 
     async def list_by_driver(self, user_id: str) -> Sequence[Order]:
-        data = await self._client.request(
-            "GET", f"{_PREFIX}/orders/by-driver/{user_id}"
-        )
+        data = await self._client.request("GET", f"{_PREFIX}/orders/by-driver/{user_id}")
         return [mappers.to_order(x) for x in data]
 
     async def list_available(self) -> Sequence[Order]:
@@ -97,9 +94,7 @@ class OfferApiGateway:
         return [mappers.to_offer(x) for x in data]
 
     async def list_for_driver(self, user_id: str) -> Sequence[Offer]:
-        data = await self._client.request(
-            "GET", f"{_PREFIX}/offers/by-driver/{user_id}"
-        )
+        data = await self._client.request("GET", f"{_PREFIX}/offers/by-driver/{user_id}")
         return [mappers.to_offer(x) for x in data]
 
     async def create(self, user_id: str, command: NewOffer) -> Offer:

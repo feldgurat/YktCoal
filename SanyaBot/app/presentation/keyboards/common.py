@@ -1,8 +1,8 @@
 """Клавиатуры общего назначения и главное меню."""
+
 from __future__ import annotations
 
 from aiogram.types import (
-    InlineKeyboardButton,
     InlineKeyboardMarkup,
     KeyboardButton,
     ReplyKeyboardMarkup,
@@ -15,9 +15,7 @@ from app.presentation.callbacks import MenuCB
 
 def request_phone_kb() -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
-        keyboard=[
-            [KeyboardButton(text="📱 Поделиться номером", request_contact=True)]
-        ],
+        keyboard=[[KeyboardButton(text="📱 Поделиться номером", request_contact=True)]],
         resize_keyboard=True,
         one_time_keyboard=True,
         input_field_placeholder="Нажмите кнопку, чтобы поделиться номером",
@@ -37,9 +35,7 @@ def main_menu_kb(user: User) -> InlineKeyboardMarkup:
             text="📨 Мои предложения",
             callback_data=MenuCB(section="my_offers"),
         )
-        builder.button(
-            text="🛠 Мои рейсы", callback_data=MenuCB(section="driver_orders")
-        )
+        builder.button(text="🛠 Мои рейсы", callback_data=MenuCB(section="driver_orders"))
     builder.adjust(1)
     return builder.as_markup()
 

@@ -21,9 +21,7 @@ from services.Exeptions import (
 
 
 class OfferService:
-    def __init__(
-        self, offer_repo: OfferRepository, order_repo: OrderRepository
-    ) -> None:
+    def __init__(self, offer_repo: OfferRepository, order_repo: OrderRepository) -> None:
         self._offers = offer_repo
         self._orders = order_repo
 
@@ -64,13 +62,9 @@ class OfferService:
         if order is None:
             raise OrderNotFoundError()
         if order.status != OrderStatus.NEW:
-            raise OrderWrongStatusError(
-                "Подавать предложения можно только на новые заказы"
-            )
+            raise OrderWrongStatusError("Подавать предложения можно только на новые заказы")
         if order.user_id == driver_user_id:
-            raise OfferAccessDeniedError(
-                "Нельзя подать предложение на собственный заказ"
-            )
+            raise OfferAccessDeniedError("Нельзя подать предложение на собственный заказ")
 
         # Запрещаем дубли активных предложений от одного водителя на один заказ.
         existing = await self._offers.get_existing_pending(order.id, driver_user_id)

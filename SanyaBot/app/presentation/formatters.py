@@ -2,6 +2,7 @@
 
 Отделяет «как выглядит сообщение» от «что делает хендлер» (SRP).
 """
+
 from __future__ import annotations
 
 from collections.abc import Mapping

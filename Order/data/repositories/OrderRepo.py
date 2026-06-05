@@ -13,9 +13,7 @@ from data.repositories.BaseRepo import BaseRepository
 class OrderRepository(BaseRepository[Order]):
     async def get_by_user_id(self, user_id: uuid.UUID) -> Sequence[Order]:
         result = await self._session.exec(
-            select(Order)
-            .where(Order.user_id == user_id)
-            .order_by(Order.created_at.desc())
+            select(Order).where(Order.user_id == user_id).order_by(Order.created_at.desc())
         )
         return result.all()
 
@@ -30,9 +28,7 @@ class OrderRepository(BaseRepository[Order]):
     async def get_available(self) -> Sequence[Order]:
         """Активные заказы со статусом NEW — доступны водителям для подачи Offer."""
         result = await self._session.exec(
-            select(Order)
-            .where(Order.status == OrderStatus.NEW)
-            .order_by(Order.created_at.desc())
+            select(Order).where(Order.status == OrderStatus.NEW).order_by(Order.created_at.desc())
         )
         return result.all()
 

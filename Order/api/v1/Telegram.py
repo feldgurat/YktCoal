@@ -94,45 +94,33 @@ async def tg_get_order(order_id: uuid.UUID, service: OrderServiceDep):
 
 
 @router.post("/orders/{order_id}/accept-offer", response_model=OrderRead)
-async def tg_accept_offer(
-    order_id: uuid.UUID, data: TgAcceptOffer, service: OrderServiceDep
-):
+async def tg_accept_offer(order_id: uuid.UUID, data: TgAcceptOffer, service: OrderServiceDep):
     if data.order_id != order_id:
-        raise HTTPException(
-            status_code=400, detail="order_id в пути и теле не совпадают"
-        )
+        raise HTTPException(status_code=400, detail="order_id в пути и теле не совпадают")
     order, _offer = await service.accept_offer(data.user_id, order_id, data.offer_id)
     return _r_order(order)
 
 
 @router.post("/orders/{order_id}/start", response_model=OrderRead)
-async def tg_start_order(
-    order_id: uuid.UUID, data: TgOrderAction, service: OrderServiceDep
-):
+async def tg_start_order(order_id: uuid.UUID, data: TgOrderAction, service: OrderServiceDep):
     o = await service.start(data.user_id, order_id)
     return _r_order(o)
 
 
 @router.post("/orders/{order_id}/complete", response_model=OrderRead)
-async def tg_complete_order(
-    order_id: uuid.UUID, data: TgOrderAction, service: OrderServiceDep
-):
+async def tg_complete_order(order_id: uuid.UUID, data: TgOrderAction, service: OrderServiceDep):
     o = await service.complete(data.user_id, order_id)
     return _r_order(o)
 
 
 @router.post("/orders/{order_id}/cancel", response_model=OrderRead)
-async def tg_cancel_order(
-    order_id: uuid.UUID, data: TgOrderAction, service: OrderServiceDep
-):
+async def tg_cancel_order(order_id: uuid.UUID, data: TgOrderAction, service: OrderServiceDep):
     o = await service.cancel(data.user_id, order_id)
     return _r_order(o)
 
 
 @router.post("/orders/{order_id}/driver-withdraw", response_model=OrderRead)
-async def tg_driver_withdraw(
-    order_id: uuid.UUID, data: TgOrderAction, service: OrderServiceDep
-):
+async def tg_driver_withdraw(order_id: uuid.UUID, data: TgOrderAction, service: OrderServiceDep):
     o = await service.driver_withdraw(data.user_id, order_id)
     return _r_order(o)
 
@@ -176,8 +164,6 @@ class TgOfferAction(SQLModel):
 
 
 @router.post("/offers/{offer_id}/withdraw", response_model=OfferRead)
-async def tg_withdraw_offer(
-    offer_id: uuid.UUID, data: TgOfferAction, service: OfferServiceDep
-):
+async def tg_withdraw_offer(offer_id: uuid.UUID, data: TgOfferAction, service: OfferServiceDep):
     offer = await service.withdraw(data.user_id, offer_id)
     return _r_offer(offer)

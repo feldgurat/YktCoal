@@ -4,6 +4,7 @@
 из Telegram уже подтверждён, поэтому OTP не нужен; если пользователь с таким
 телефоном уже есть — привязываем tg_id, иначе создаём нового.
 """
+
 from __future__ import annotations
 
 from app.domain.commands import RegisterUser

@@ -1,8 +1,9 @@
 """Хендлеры старта и регистрации (онбординг)."""
+
 from __future__ import annotations
 
 from aiogram import F, Router
-from aiogram.filters import CommandStart, StateFilter
+from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -22,16 +23,13 @@ router = Router(name="start")
 async def show_main_menu(message: Message, user: User) -> None:
     roles = "Заказчик" + (" + Водитель" if user.is_driver else "")
     await message.answer(
-        f"👋 Здравствуйте, <b>{user.name}</b>!\n"
-        f"Роль: {roles}\n\nВыберите действие:",
+        f"👋 Здравствуйте, <b>{user.name}</b>!\nРоль: {roles}\n\nВыберите действие:",
         reply_markup=main_menu_kb(user),
     )
 
 
 @router.message(CommandStart())
-async def cmd_start(
-    message: Message, state: FSMContext, current_user: User | None
-) -> None:
+async def cmd_start(message: Message, state: FSMContext, current_user: User | None) -> None:
     await state.clear()
     if current_user is not None:
         await show_main_menu(message, current_user)
@@ -46,9 +44,7 @@ async def cmd_start(
 
 
 @router.message(Onboarding.waiting_phone, F.contact)
-async def on_contact(
-    message: Message, state: FSMContext, auth_service: AuthService
-) -> None:
+async def on_contact(message: Message, state: FSMContext, auth_service: AuthService) -> None:
     phone = message.contact.phone_number
 
     # Телефон, привязанный к чужому Telegram-аккаунту, не принимаем.
@@ -93,16 +89,12 @@ async def on_name(message: Message, state: FSMContext) -> None:
         await message.answer("Имя не может быть пустым. Введите имя.")
         return
     await state.update_data(name=name)
-    await message.answer(
-        "Укажите адрес доставки по умолчанию (можно пропустить — отправьте «-»)."
-    )
+    await message.answer("Укажите адрес доставки по умолчанию (можно пропустить — отправьте «-»).")
     await state.set_state(Onboarding.waiting_address)
 
 
 @router.message(Onboarding.waiting_address, F.text)
-async def on_address(
-    message: Message, state: FSMContext, auth_service: AuthService
-) -> None:
+async def on_address(message: Message, state: FSMContext, auth_service: AuthService) -> None:
     address_raw = message.text.strip()
     address = None if address_raw in {"-", ""} else address_raw
 
