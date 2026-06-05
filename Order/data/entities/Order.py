@@ -16,6 +16,7 @@ class OrderStatus(StrEnum):
     COMPLETED = "completed"
     CANCELLED = "cancelled"
 
+
 class Order(SQLModel, table=True):
     __tablename__ = "orders"
 

@@ -55,7 +55,7 @@ async def get_current_user(
 
     try:
         user_id = uuid.UUID(payload["sub"])
-    except (KeyError, ValueError):
+    except KeyError, ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Невалидный токен",

@@ -15,6 +15,7 @@ class OfferStatus(StrEnum):
     REJECTED = "rejected"
     WITHDRAWN = "withdrawn"
 
+
 class Offer(SQLModel, table=True):
     __tablename__ = "offers"
 
