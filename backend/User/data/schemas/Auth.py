@@ -27,7 +27,7 @@ class RegisterIn(SQLModel):
     name: str = Field(min_length=1, max_length=255)
     contact_number: str = Field(min_length=10, max_length=20)
     telegram_user_id: str | None = None
-    address: str | None = Field(max_length=512)
+    address: str | None = Field(default=None, max_length=512)
 
     @field_validator("contact_number")
     @classmethod
