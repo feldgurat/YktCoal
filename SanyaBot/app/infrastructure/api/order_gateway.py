@@ -38,8 +38,12 @@ class OrderApiGateway:
         )
         return mappers.to_order(data)
 
-    async def get(self, order_id: str) -> Order:
-        data = await self._client.request("GET", f"{_PREFIX}/orders/{order_id}")
+    async def get(self, user_id: str, roles: Sequence[str], order_id: str) -> Order:
+        data = await self._client.request(
+            "GET",
+            f"{_PREFIX}/orders/{order_id}",
+            params={"user_id": user_id, "roles": list(roles)},
+        )
         return mappers.to_order(data)
 
     async def list_by_user(self, user_id: str) -> Sequence[Order]:

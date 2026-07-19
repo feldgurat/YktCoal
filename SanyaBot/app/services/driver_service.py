@@ -21,8 +21,8 @@ class DriverService:
     async def available_orders(self) -> Sequence[Order]:
         return await self._orders.list_available()
 
-    async def get_order(self, order_id: str) -> Order:
-        return await self._orders.get(order_id)
+    async def get_order(self, user_id: str, roles: Sequence[str], order_id: str) -> Order:
+        return await self._orders.get(user_id, roles, order_id)
 
     async def my_orders(self, user_id: str) -> Sequence[Order]:
         return await self._orders.list_by_driver(user_id)

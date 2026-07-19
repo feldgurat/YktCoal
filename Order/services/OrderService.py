@@ -61,6 +61,20 @@ class OrderService:
             raise OrderNotFoundError()
         return o
 
+    async def get_for_actor(
+        self, actor_id: uuid.UUID, roles: list[str], order_id: uuid.UUID
+    ) -> Order:
+        order = await self.get(order_id)
+        allowed = (
+            actor_id == order.user_id
+            or actor_id == order.accepted_driver_id
+            or "admin" in roles
+            or ("driver" in roles and order.status == OrderStatus.NEW)
+        )
+        if not allowed:
+            raise OrderNotFoundError()
+        return order
+
     async def list_my(self, user_id: uuid.UUID) -> Sequence[Order]:
         return await self._orders.get_by_user_id(user_id)
 

@@ -40,8 +40,10 @@ async def my_orders(current_user: CurrentUserDep, service: OrderServiceDep):
 
 
 @router.get("/{order_id}", response_model=OrderRead)
-async def get_order(order_id: uuid.UUID, _user: CurrentUserDep, service: OrderServiceDep):
-    o = await service.get(order_id)
+async def get_order(
+    order_id: uuid.UUID, current_user: CurrentUserDep, service: OrderServiceDep
+):
+    o = await service.get_for_actor(current_user.id, current_user.roles, order_id)
     return _r(o)
 
 

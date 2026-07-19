@@ -33,8 +33,8 @@ class CustomerService:
     async def my_orders(self, user_id: str) -> Sequence[Order]:
         return await self._orders.list_by_user(user_id)
 
-    async def get_order(self, order_id: str) -> Order:
-        return await self._orders.get(order_id)
+    async def get_order(self, user_id: str, roles: Sequence[str], order_id: str) -> Order:
+        return await self._orders.get(user_id, roles, order_id)
 
     async def offers_for_order(self, user_id: str, order_id: str) -> Sequence[Offer]:
         return await self._offers.list_for_order(user_id, order_id)

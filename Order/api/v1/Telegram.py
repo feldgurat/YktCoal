@@ -1,6 +1,7 @@
 import uuid
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from sqlmodel import SQLModel
 
 from api.routes import API_V1_PREFIX, TELEGRAM
@@ -88,8 +89,13 @@ async def tg_available_orders(service: OrderServiceDep):
 
 
 @router.get("/orders/{order_id}", response_model=OrderRead)
-async def tg_get_order(order_id: uuid.UUID, service: OrderServiceDep):
-    o = await service.get(order_id)
+async def tg_get_order(
+    order_id: uuid.UUID,
+    user_id: uuid.UUID,
+    service: OrderServiceDep,
+    roles: Annotated[list[str] | None, Query()] = None,
+):
+    o = await service.get_for_actor(user_id, roles or [], order_id)
     return _r_order(o)
 
 
