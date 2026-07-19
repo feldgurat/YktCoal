@@ -11,6 +11,7 @@ COPY . .
 # В docker-compose монтируется как volume.
 RUN mkdir -p /data/uploads
 
-EXPOSE 8001
+ENV APP_PORT=8002
+EXPOSE ${APP_PORT}
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001", "--reload"]
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${APP_PORT} --reload"]

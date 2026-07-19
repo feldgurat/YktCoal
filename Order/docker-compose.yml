@@ -2,7 +2,9 @@ services:
   order-backend:
     build: .
     ports:
-      - "8002:8002"
+      - "8001:8001"
+    environment:
+      APP_PORT: 8001
     env_file:
       - .env
     volumes:

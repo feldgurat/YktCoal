@@ -9,7 +9,7 @@ class Settings(BaseSettings):
 
     # ── Backend services ───────────────────────────────────────
     USER_SERVICE_URL: str = "http://user-backend:8000"
-    ORDER_SERVICE_URL: str = "http://order-backend:8002"
+    ORDER_SERVICE_URL: str = "http://order-backend:8001"
 
     # Сервисный ключ, общий для всех Telegram-эндпоинтов бэкенда
     # (заголовок X-Service-Key). Должен совпадать с
