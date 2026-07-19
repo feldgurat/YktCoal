@@ -13,12 +13,10 @@ function Login() {
 
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState(null);
-  const [code, setCode] = useState(null);
   const [loginError, setLoginError] = useState('');
 
   const handleCodeSent = (data) => {
     setPhone(data.userPhone);
-    setCode(data.debug_code);
     setStep('code');
   };
 
@@ -43,9 +41,7 @@ function Login() {
                 shadow-[0_0_33px_7px_rgba(0,0,0,0.25)] rounded-[11px] p-6"
       >
         {step === 'phone' && <PhoneForm onCodeSent={handleCodeSent} />}
-        {step === 'code' && (
-          <CodeForm phone={phone} expectedCode={code} onLogin={handleLogin} />
-        )}
+        {step === 'code' && <CodeForm phone={phone} onLogin={handleLogin} />}
         {loginError && (
           <p className="mt-3 text-center text-red-600 text-sm">{loginError}</p>
         )}

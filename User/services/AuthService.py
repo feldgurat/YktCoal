@@ -45,7 +45,7 @@ class AuthService:
     def hash_code(phone: str, code: str) -> str:
         return hashlib.sha256(f"{phone}:{code}".encode()).hexdigest()
 
-    async def send_otp(self, phone: str) -> str:
+    async def send_otp(self, phone: str) -> None:
         if await self._auth_repo.is_rate_limited(phone):
             raise OtpRateLimitError()
 
@@ -55,8 +55,16 @@ class AuthService:
         await self._auth_repo.save_otp(phone, code_hash)
         await self._auth_repo.set_rate_limit(phone)
 
-        # TODO: await send_sms_via_exolve(destination=phone, text=f"Код: {code}")
-        return code
+        await self._deliver_code(phone, code)
+
+    @staticmethod
+    async def _deliver_code(phone: str, code: str) -> None:
+        # TODO: интеграция с SMS-провайдером (МТС Exolve):
+        #   await send_sms_via_exolve(destination=phone, text=f"Код: {code}")
+        if settings.OTP_DEBUG:
+            logger.warning("OTP %s = %s (OTP_DEBUG, только для dev)", phone, code)
+        else:
+            logger.info("OTP отправлен на %s", phone)
 
     async def verify_otp(self, phone: str, code: str) -> None:
         stored_hash = await self._auth_repo.get_otp(phone)
@@ -128,11 +136,11 @@ class AuthService:
 
     # ── High-level flows ───────────────────────────────────────
 
-    async def request_sign_in_code(self, phone: str) -> str:
+    async def request_sign_in_code(self, phone: str) -> None:
         user = await self._user_repo.get_by_contact_number(phone)
         if user is None:
             raise UserNotFoundError("Пользователя с таким номером нет в системе")
-        return await self.send_otp(phone)
+        await self.send_otp(phone)
 
     async def verify_sign_in_code(self, phone: str, code: str) -> tuple[User, str, str]:
         user = await self._user_repo.get_by_contact_number(phone)
@@ -165,7 +173,7 @@ class AuthService:
 
         return self.create_token_pair(str(user.id), user.token_version, user.role_names)
 
-    async def register(self, data: RegisterIn) -> tuple[User, str]:
+    async def register(self, data: RegisterIn) -> User:
         existing = await self._user_repo.get_by_contact_number(data.contact_number)
         if existing is not None:
             raise UserAlreadyExistsError()
@@ -179,8 +187,8 @@ class AuthService:
         )
         await self._user_repo.create(user)
 
-        code = await self.send_otp(data.contact_number)
-        return user, code
+        await self.send_otp(data.contact_number)
+        return user
 
     async def logout(self, access_payload: dict | None, refresh_token: str | None) -> None:
         """

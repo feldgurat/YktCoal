@@ -3,7 +3,7 @@ import api from '../api';
 import { Link } from 'react-router-dom';
 import { AUTH } from '../api/endpoints'
 
-function CodeForm({ phone, expectedCode, onLogin }) {
+function CodeForm({ phone, onLogin }) {
     const [code, setCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -15,7 +15,6 @@ function CodeForm({ phone, expectedCode, onLogin }) {
 
         try {
             const response = await api.post(AUTH.VERIFY_CODE, { phone, code });
-            console.log('Ответ при входе:', response.data); // посмотрите, есть ли там user
             onLogin(response.data);
             } 
         catch (err) {
@@ -53,11 +52,6 @@ return (
             <Link to="/">УгольЯкт</Link></a>
         <h2 className='font-montserrat font-semibold'>Подтверждение кода</h2>
         <p>Код отправлен на номер {phone}</p>
-        {expectedCode && (
-            <p className='bg-gray-100'>
-                (код: <strong>{expectedCode}</strong>)  
-            </p>
-        )}
         <input
             type="text"
             value={code}

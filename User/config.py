@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     OTP_TTL_SECONDS: int = 300
     OTP_RATE_LIMIT_SECONDS: int = 60
     OTP_CODE_LENGTH: int = 4
+    # Только для разработки: если True — OTP-код пишется в лог сервера.
+    # В проде ДОЛЖНО быть False, иначе код можно достать из логов.
+    OTP_DEBUG: bool = False
 
     DEFAULT_ADMIN_NAME: str
     DEFAULT_ADMIN_PHONE: str

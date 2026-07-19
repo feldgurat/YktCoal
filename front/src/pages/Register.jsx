@@ -12,12 +12,10 @@ function Register() {
 
   const [step, setStep] = useState('register');
   const [phone, setPhone] = useState(null);
-  const [code, setCode] = useState(null);
   const [error, setError] = useState('');
 
   const handleCodeSent = (data) => {
     setPhone(data.userPhone);
-    setCode(data.message);
     setStep('code');
   };
 
@@ -44,11 +42,7 @@ function Register() {
       >
         {step === 'register' && <RegisterForm onRegSuccess={handleCodeSent} />}
         {step === 'code' && (
-          <CodeForm
-            phone={phone}
-            expectedCode={code}
-            onLogin={handleLoginAfterCode}
-          />
+          <CodeForm phone={phone} onLogin={handleLoginAfterCode} />
         )}
         {error && (
           <p className="mt-3 text-center text-red-600 text-sm">{error}</p>

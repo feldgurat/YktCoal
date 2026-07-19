@@ -17,11 +17,10 @@ from services.AuthService import AuthServiceDep
 router = APIRouter(prefix=f"{API_V1_PREFIX}{AUTH}", tags=["Auth"])
 
 
-@router.post("/sign-in-code-request")
+@router.post("/sign-in-code-request", response_model=StatusOut)
 async def request_sign_in_code(data: SmsRequestIn, auth_service: AuthServiceDep):
-    code = await auth_service.request_sign_in_code(data.phone)
-    # TODO: убрать debug_code перед продакшеном
-    return {"status": "ok", "message": "Код отправлен", "debug_code": code}
+    await auth_service.request_sign_in_code(data.phone)
+    return StatusOut(status="ok")
 
 
 @router.post("/sign-in-code-answer", response_model=AccessTokenOut)
@@ -62,10 +61,8 @@ async def refresh_tokens(
 
 @router.post("/register", response_model=RegisterOut, status_code=status.HTTP_201_CREATED)
 async def register(data: RegisterIn, auth_service: AuthServiceDep):
-    _user, code = await auth_service.register(data)
-
-    # TODO: убрать code перед продакшеном
-    return RegisterOut(success=True, message=f"Пользователь создан. Код отправлен. {code}")
+    await auth_service.register(data)
+    return RegisterOut(success=True, message="Пользователь создан. Код отправлен по SMS.")
 
 
 @router.post("/logout", response_model=StatusOut)

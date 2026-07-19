@@ -10,18 +10,15 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
   const dispatch = useDispatch();
   const [step, setStep] = useState('phone');
   const [phone, setPhone] = useState(null);
-  const [code, setCode] = useState(null);
   const [error, setError] = useState('');
 
   const handleLoginCodeSent = (data) => {
     setPhone(data.userPhone || data.phone);
-    setCode(data.debug_code);
     setStep('code');
   };
 
   const handleRegisterSuccess = (data) => {
     setPhone(data.userPhone || data.phone);
-    setCode(data.message);
     setStep('code');
   };
 
@@ -77,9 +74,7 @@ function AuthModal({ isOpen, onClose, onSuccess }) {
             </div>
           </>
         )}
-        {step === 'code' && (
-          <CodeForm phone={phone} expectedCode={code} onLogin={handleLogin} />
-        )}
+        {step === 'code' && <CodeForm phone={phone} onLogin={handleLogin} />}
         {error && (
           <p className="mt-3 text-center text-red-600 text-sm">{error}</p>
         )}
