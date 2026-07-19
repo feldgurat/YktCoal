@@ -1,6 +1,8 @@
 services:
   user-backend:
-    build: .
+    build:
+      context: ..
+      dockerfile: User/Dockerfile
     ports:
       - "8000:8000"
     environment:

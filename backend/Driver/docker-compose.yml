@@ -1,6 +1,8 @@
 services:
   driver-backend:
-    build: .
+    build:
+      context: ..
+      dockerfile: Driver/Dockerfile
     ports:
       - "8002:8002"
     environment:

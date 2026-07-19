@@ -1,6 +1,8 @@
 services:
   order-backend:
-    build: .
+    build:
+      context: ..
+      dockerfile: Order/Dockerfile
     ports:
       - "8001:8001"
     environment:

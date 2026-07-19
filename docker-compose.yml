@@ -36,7 +36,9 @@ services:
       retries: 5
 
   user-backend:
-    build: ./backend/User
+    build:
+      context: ./backend
+      dockerfile: User/Dockerfile
     ports:
       - "8000:8000"
     environment:
@@ -57,7 +59,9 @@ services:
     restart: unless-stopped
 
   order-backend:
-    build: ./backend/Order
+    build:
+      context: ./backend
+      dockerfile: Order/Dockerfile
     ports:
       - "8001:8001"
     environment:
@@ -78,7 +82,9 @@ services:
     restart: unless-stopped
 
   driver-backend:
-    build: ./backend/Driver
+    build:
+      context: ./backend
+      dockerfile: Driver/Dockerfile
     ports:
       - "8002:8002"
     environment:
