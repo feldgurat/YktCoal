@@ -21,5 +21,5 @@ class Driver(SQLModel, table=True):
     )
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
-        sa_column=Column(DateTime(timezone=True)),
+        sa_column=Column(DateTime(timezone=True), onupdate=lambda: datetime.now(UTC)),
     )

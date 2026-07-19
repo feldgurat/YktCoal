@@ -126,7 +126,6 @@ class ApplicationService:
         app.status = ApplicationStatus.APPROVED
         app.reviewed_at = datetime.now(UTC)
         app.reviewed_by = admin_user_id
-        app.updated_at = datetime.now(UTC)
         await self._app_repo.flush()
 
         # 4. Идём в User-сервис добавить роль 'driver'.
@@ -148,7 +147,6 @@ class ApplicationService:
         app.reviewed_at = datetime.now(UTC)
         app.reviewed_by = admin_user_id
         app.rejection_reason = reason
-        app.updated_at = datetime.now(UTC)
         await self._app_repo.flush()
         return app
 

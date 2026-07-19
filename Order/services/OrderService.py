@@ -1,6 +1,5 @@
 import uuid
 from collections.abc import Sequence
-from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Annotated
 
@@ -153,11 +152,8 @@ class OrderService:
         if offer.status != OfferStatus.PENDING:
             raise OrderWrongStatusError("Это предложение уже не активно")
 
-        now = datetime.now(UTC)
-
         # Приняли это предложение.
         offer.status = OfferStatus.ACCEPTED
-        offer.updated_at = now
 
         # Остальные pending по этому заказу — Rejected.
         siblings = await self._offers.get_pending_for_order(order.id)
@@ -165,13 +161,11 @@ class OrderService:
             if s.id == offer.id:
                 continue
             s.status = OfferStatus.REJECTED
-            s.updated_at = now
 
         # Обновляем заказ.
         order.status = OrderStatus.ACCEPTED
         order.accepted_driver_id = offer.driver_user_id
         order.final_price = offer.price
-        order.updated_at = now
 
         await self._orders.flush()
         return order, offer
@@ -184,7 +178,6 @@ class OrderService:
         if order.status != OrderStatus.ACCEPTED:
             raise OrderWrongStatusError("Начать можно только заказ в статусе ACCEPTED")
         order.status = OrderStatus.IN_PROCESS
-        order.updated_at = datetime.now(UTC)
         await self._orders.flush()
         return order
 
@@ -196,7 +189,6 @@ class OrderService:
         if order.status != OrderStatus.IN_PROCESS:
             raise OrderWrongStatusError("Подтвердить выполнение можно только для заказа в работе")
         order.status = OrderStatus.COMPLETED
-        order.updated_at = datetime.now(UTC)
         await self._orders.flush()
         return order
 
@@ -211,13 +203,10 @@ class OrderService:
         if order.status not in (OrderStatus.NEW, OrderStatus.ACCEPTED):
             raise OrderWrongStatusError("Отменить можно только заказ в статусе NEW или ACCEPTED")
 
-        now = datetime.now(UTC)
         for off in await self._offers.get_pending_for_order(order.id):
             off.status = OfferStatus.REJECTED
-            off.updated_at = now
 
         order.status = OrderStatus.CANCELLED
-        order.updated_at = now
         await self._orders.flush()
         return order
 
@@ -246,15 +235,12 @@ class OrderService:
             ),
             None,
         )
-        now = datetime.now(UTC)
         if accepted is not None:
             accepted.status = OfferStatus.WITHDRAWN
-            accepted.updated_at = now
 
         order.status = OrderStatus.NEW
         order.accepted_driver_id = None
         order.final_price = None
-        order.updated_at = now
         await self._orders.flush()
         return order
 

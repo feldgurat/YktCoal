@@ -1,6 +1,5 @@
 import uuid
 from collections.abc import Sequence
-from datetime import UTC, datetime
 from typing import TypeVar
 
 from sqlmodel import SQLModel, select
@@ -34,7 +33,6 @@ class BaseRepository[T: SQLModel]:
         ent = await self.get_by_id(entity_id)
         if ent is None:
             return None
-        ent.updated_at = datetime.now(UTC).isoformat()
         for field, value in data.model_dump(exclude_unset=True).items():
             setattr(ent, field, value)
         await self._session.flush()

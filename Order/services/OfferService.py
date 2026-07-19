@@ -1,6 +1,5 @@
 import uuid
 from collections.abc import Sequence
-from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import Depends
@@ -92,7 +91,6 @@ class OfferService:
             raise OfferWrongStatusError("Отозвать можно только активное предложение")
 
         offer.status = OfferStatus.WITHDRAWN
-        offer.updated_at = datetime.now(UTC)
         await self._offers.flush()
         return offer
 
@@ -113,7 +111,6 @@ class OfferService:
             raise OfferWrongStatusError("Отклонить можно только активное предложение")
 
         offer.status = OfferStatus.REJECTED
-        offer.updated_at = datetime.now(UTC)
         await self._offers.flush()
         return offer
 

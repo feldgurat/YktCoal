@@ -20,11 +20,12 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
-        sa_type=DateTime(timezone=True),  # ← изменить
+        sa_type=DateTime(timezone=True),
     )
     updated_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),
-        sa_type=DateTime(timezone=True),  # ← изменить
+        sa_type=DateTime(timezone=True),
+        sa_column_kwargs={"onupdate": lambda: datetime.now(UTC)},
     )
     # ── Role helpers ───────────────────────────────────────────
 
