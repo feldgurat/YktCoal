@@ -5,14 +5,16 @@ from fastapi import Depends
 
 from data.entities.Role import RoleHelpers
 from data.entities.User import User
+from data.repositories.AuthRepo import AuthRepository, AuthRepositoryDep
 from data.repositories.UserRepo import UserRepository, UserRepositoryDep
 from data.schemas.User import UserCreate, UserRead, UserUpdate
 from services.Exeptions import InvalidRoleError, UserAlreadyExistsError, UserNotFoundError
 
 
 class UserService:
-    def __init__(self, repository: UserRepository) -> None:
+    def __init__(self, repository: UserRepository, auth_repo: AuthRepository) -> None:
         self._repo = repository
+        self._auth_repo = auth_repo
 
     # ── Entity → Schema ────────────────────────────────────────
 
@@ -87,23 +89,27 @@ class UserService:
         user = await self.get(user_id)
         try:
             user.add_role(role_name)
+            user.token_version += 1
             await self._repo.flush()
         except ValueError:
             raise InvalidRoleError(f"Неизвестная роль: {role_name}") from None
+        await self._auth_repo.set_token_version(str(user.id), user.token_version)
         return user
 
     async def remove_role(self, user_id: str, role_name: str) -> User:
         user = await self.get(user_id)
         try:
             user.remove_role(role_name)
+            user.token_version += 1
             await self._repo.flush()
         except ValueError:
             raise InvalidRoleError(f"Неизвестная роль: {role_name}") from None
+        await self._auth_repo.set_token_version(str(user.id), user.token_version)
         return user
 
 
-def get_user_service(repo: UserRepositoryDep) -> UserService:
-    return UserService(repo)
+def get_user_service(repo: UserRepositoryDep, auth_repo: AuthRepositoryDep) -> UserService:
+    return UserService(repo, auth_repo)
 
 
 UserServiceDep = Annotated[UserService, Depends(get_user_service)]
