@@ -5,7 +5,6 @@ import { useDispatch } from 'react-redux';
 import './App.css';
 import MainLayout from './layouts/MainLayout';
 import { Landing } from './pages/Landing';
-import { Test } from './pages/Test';
 import { Orders } from './pages/Orders';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
@@ -34,7 +33,6 @@ function App() {
 
         <Route element={<ProtectedRoute />}>
           <Route element={<MainLayout />}>
-            <Route path="/test" element={<Test />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/profile" element={<Profile />} />
           </Route>
