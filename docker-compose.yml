@@ -1,3 +1,8 @@
+# Удобный локальный запуск всего стека одной командой: redis + 3 бэкенда + бот.
+# Не для прода. Каждому сервису нужен свой <Service>/.env (создать из .env.example).
+#
+# БД по умолчанию ВНЕШНЯЯ (на отдельной машине) — DATABASE_URL в .env смотрит на неё.
+# Локальный Postgres только для дебага:  docker compose --profile debug-db up
 services:
   redis:
     image: redis:7-alpine
@@ -11,51 +16,77 @@ services:
       timeout: 3s
       retries: 5
 
+  # Локальный PostgreSQL — ТОЛЬКО для дебага (профиль debug-db, обычным up не поднимается).
+  # Тогда в .env сервисов: DATABASE_URL=postgresql+asyncpg://app:app@postgres:5432/app
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["debug-db"]
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d app"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
   user-backend:
     build: ./User
     ports:
       - "8000:8000"
+    environment:
+      APP_PORT: 8000
+    env_file:
+      - ./User/.env
     volumes:
       - ./User:/app
-      - user_sqlite:/app/db
-
     depends_on:
       redis:
         condition: service_healthy
-
-  driver-backend:
-    build: ./Driver
-    ports:
-      - "8002:8002"
-    volumes:
-      - ./Driver:/app
-      - driver_sqlite:/app/db
-
-    depends_on:
-      redis:
-        condition: service_healthy
-      user-backend:
-        condition: service_started
+    restart: unless-stopped
 
   order-backend:
     build: ./Order
     ports:
       - "8001:8001"
+    environment:
+      APP_PORT: 8001
+    env_file:
+      - ./Order/.env
     volumes:
       - ./Order:/app
-      - order_sqlite:/app/db
-
     depends_on:
       redis:
         condition: service_healthy
-      driver-backend:
+    restart: unless-stopped
+
+  driver-backend:
+    build: ./Driver
+    ports:
+      - "8002:8002"
+    environment:
+      APP_PORT: 8002
+    env_file:
+      - ./Driver/.env
+    volumes:
+      - ./Driver:/app
+      - driver_uploads:/data/uploads
+    depends_on:
+      redis:
+        condition: service_healthy
+      user-backend:
         condition: service_started
+    restart: unless-stopped
 
   telegram-bot:
     build: ./SanyaBot
-    volumes:
-      - ./SanyaBot:/app
-
+    env_file:
+      - ./SanyaBot/.env
     depends_on:
       user-backend:
         condition: service_started
@@ -67,6 +98,5 @@ services:
 
 volumes:
   redis_data:
-  user_sqlite:
-  driver_sqlite:
-  order_sqlite:
+  postgres_data:
+  driver_uploads:
