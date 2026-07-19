@@ -13,7 +13,7 @@ from api.v1.User import router as users_router
 from config import settings
 from data.Database import async_session_factory, create_tables, engine
 from data.Redis import close_redis, init_redis
-from services.Exeptions import AppException
+from services.Exceptions import AppException
 from services.Startup import create_default_admin
 
 logging.basicConfig(level=logging.INFO)

@@ -13,7 +13,7 @@ from data.repositories.ApplicationRepo import ApplicationRepository, Application
 from data.repositories.DriverRepo import DriverRepository, DriverRepositoryDep
 from data.repositories.VehicleRepo import VehicleRepository, VehicleRepositoryDep
 from data.schemas.Application import ApplicationCreate, ApplicationRead
-from services.Exeptions import (
+from services.Exceptions import (
     ApplicationAlreadyExistsError,
     ApplicationNotFoundError,
     ApplicationWrongStatusError,

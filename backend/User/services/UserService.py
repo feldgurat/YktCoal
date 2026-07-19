@@ -8,7 +8,7 @@ from data.entities.User import User
 from data.repositories.AuthRepo import AuthRepository, AuthRepositoryDep
 from data.repositories.UserRepo import UserRepository, UserRepositoryDep
 from data.schemas.User import UserCreate, UserRead, UserUpdate
-from services.Exeptions import InvalidRoleError, UserAlreadyExistsError, UserNotFoundError
+from services.Exceptions import InvalidRoleError, UserAlreadyExistsError, UserNotFoundError
 
 
 class UserService:

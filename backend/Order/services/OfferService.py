@@ -9,7 +9,7 @@ from data.entities.Order import OrderStatus
 from data.repositories.OfferRepo import OfferRepository, OfferRepositoryDep
 from data.repositories.OrderRepo import OrderRepository, OrderRepositoryDep
 from data.schemas.Offer import OfferCreate, OfferRead
-from services.Exeptions import (
+from services.Exceptions import (
     OfferAccessDeniedError,
     OfferAlreadyExistsError,
     OfferNotFoundError,

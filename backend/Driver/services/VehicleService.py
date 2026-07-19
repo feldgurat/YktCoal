@@ -8,7 +8,7 @@ from data.entities.Vehicle import Vehicle
 from data.repositories.DriverRepo import DriverRepository, DriverRepositoryDep
 from data.repositories.VehicleRepo import VehicleRepository, VehicleRepositoryDep
 from data.schemas.Vehicle import VehicleCreate, VehicleRead, VehicleUpdate
-from services.Exeptions import DriverNotFoundError, VehicleAccessDeniedError, VehicleNotFoundError
+from services.Exceptions import DriverNotFoundError, VehicleAccessDeniedError, VehicleNotFoundError
 
 
 class VehicleService:

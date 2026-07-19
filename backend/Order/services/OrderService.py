@@ -11,7 +11,7 @@ from data.repositories.OfferRepo import OfferRepository, OfferRepositoryDep
 from data.repositories.OrderRepo import OrderRepository, OrderRepositoryDep
 from data.repositories.ResourceRepo import ResourceRepository, ResourceRepositoryDep
 from data.schemas.Order import OrderCreate, OrderRead, OrderUpdate
-from services.Exeptions import (
+from services.Exceptions import (
     OrderAccessDeniedError,
     OrderNotFoundError,
     OrderWrongStatusError,

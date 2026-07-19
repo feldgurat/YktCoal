@@ -6,7 +6,7 @@ from typing import Annotated
 from fastapi import Depends, UploadFile
 
 from config import settings
-from services.Exeptions import FileNotFoundInStorageError, InvalidUploadError
+from services.Exceptions import FileNotFoundInStorageError, InvalidUploadError
 
 logger = logging.getLogger(__name__)
 

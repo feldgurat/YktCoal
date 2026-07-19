@@ -7,7 +7,7 @@ from data.entities.User import User
 from data.repositories.UserRepo import UserRepositoryDep
 from data.schemas.Telegram import TgLinkIn, TgRegisterIn
 from data.schemas.User import UserRead
-from services.Exeptions import UserAlreadyExistsError, UserNotFoundError
+from services.Exceptions import UserAlreadyExistsError, UserNotFoundError
 from services.UserService import UserService, UserServiceDep
 
 

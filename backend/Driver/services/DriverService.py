@@ -7,7 +7,7 @@ from fastapi import Depends
 from data.entities.Driver import Driver
 from data.repositories.DriverRepo import DriverRepository, DriverRepositoryDep
 from data.schemas.Driver import DriverRead
-from services.Exeptions import DriverNotFoundError
+from services.Exceptions import DriverNotFoundError
 
 
 class DriverService:

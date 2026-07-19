@@ -15,7 +15,7 @@ from data.entities.User import User
 from data.repositories.AuthRepo import AuthRepository, AuthRepositoryDep
 from data.repositories.UserRepo import UserRepository, UserRepositoryDep
 from data.schemas.Auth import RegisterIn
-from services.Exeptions import (
+from services.Exceptions import (
     AppException,
     InvalidTokenError,
     InvalidTokenTypeError,

@@ -6,7 +6,7 @@ import httpx
 from fastapi import Depends
 
 from config import settings
-from services.Exeptions import UserServiceError
+from services.Exceptions import UserServiceError
 
 logger = logging.getLogger(__name__)
 

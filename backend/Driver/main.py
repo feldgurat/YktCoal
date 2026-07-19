@@ -16,7 +16,7 @@ from data.entities.Application import Application  # noqa: F401, E402
 from data.entities.Driver import Driver  # noqa: F401, E402
 from data.entities.Vehicle import Vehicle  # noqa: F401, E402
 from data.Redis import close_redis, init_redis
-from services.Exeptions import AppException
+from services.Exceptions import AppException
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

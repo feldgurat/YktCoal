@@ -7,7 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from data.entities.User import User
 from services.AuthService import AuthServiceDep
-from services.Exeptions import AppException
+from services.Exceptions import AppException
 from services.UserService import UserServiceDep
 
 bearer_scheme = HTTPBearer(auto_error=False)

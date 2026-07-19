@@ -7,7 +7,7 @@ from fastapi import Depends
 from data.entities.Resource import Resource
 from data.repositories.ResourceRepo import ResourceRepository, ResourceRepositoryDep
 from data.schemas.Resource import ResourceCreate, ResourceRead, ResourceUpdate
-from services.Exeptions import ResourceAlreadyExistsError, ResourceNotFoundError
+from services.Exceptions import ResourceAlreadyExistsError, ResourceNotFoundError
 
 
 class ResourceService:

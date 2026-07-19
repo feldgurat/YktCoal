@@ -13,7 +13,7 @@ from api.v1.Telegram import router as telegram_router
 from config import settings
 from data.Database import create_tables, engine
 from data.Redis import close_redis, init_redis
-from services.Exeptions import AppException
+from services.Exceptions import AppException
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
