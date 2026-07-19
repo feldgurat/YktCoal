@@ -61,7 +61,8 @@ app.include_router(resources_router)
 app.include_router(orders_router)
 app.include_router(offers_router)
 app.include_router(telegram_router)
-app.include_router(debug_router)
+if not settings.is_production:
+    app.include_router(debug_router)
 
 
 app.add_middleware(

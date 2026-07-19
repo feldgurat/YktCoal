@@ -63,7 +63,8 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 app.include_router(applications_router)
 app.include_router(drivers_router)
 app.include_router(telegram_router)
-app.include_router(debug_router)
+if not settings.is_production:
+    app.include_router(debug_router)
 app.include_router(internal_router)
 
 

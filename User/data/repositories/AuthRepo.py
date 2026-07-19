@@ -10,6 +10,7 @@ from data.Redis import get_redis
 class AuthRepository:
     _OTP_KEY = "otp:{phone}"
     _RATE_KEY = "otp_rate:{phone}"
+    _ATTEMPTS_KEY = "otp_attempts:{phone}"
     _BLACKLIST_KEY = "token_bl:{jti}"
 
     def __init__(self, redis_client: redis.Redis) -> None:
@@ -18,6 +19,7 @@ class AuthRepository:
     async def save_otp(self, phone: str, code_hash: str) -> None:
         key = self._OTP_KEY.format(phone=phone)
         await self._redis.setex(key, settings.OTP_TTL_SECONDS, code_hash)
+        await self.reset_attempts(phone)
 
     async def get_otp(self, phone: str) -> str | None:
         key = self._OTP_KEY.format(phone=phone)
@@ -25,6 +27,18 @@ class AuthRepository:
 
     async def delete_otp(self, phone: str) -> None:
         key = self._OTP_KEY.format(phone=phone)
+        await self._redis.delete(key)
+
+    async def incr_attempts(self, phone: str) -> int:
+        key = self._ATTEMPTS_KEY.format(phone=phone)
+        async with self._redis.pipeline(transaction=True) as pipe:
+            pipe.incr(key)
+            pipe.expire(key, settings.OTP_TTL_SECONDS)
+            count, _ = await pipe.execute()
+        return count
+
+    async def reset_attempts(self, phone: str) -> None:
+        key = self._ATTEMPTS_KEY.format(phone=phone)
         await self._redis.delete(key)
 
     async def is_rate_limited(self, phone: str) -> bool:

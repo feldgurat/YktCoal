@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 import logging
 import secrets
 import uuid
@@ -71,10 +72,15 @@ class AuthService:
         if stored_hash is None:
             raise OtpInvalidError("Код не найден или истёк")
 
-        if stored_hash != self.hash_code(phone, code):
+        if not hmac.compare_digest(stored_hash, self.hash_code(phone, code)):
+            attempts = await self._auth_repo.incr_attempts(phone)
+            if attempts >= settings.OTP_MAX_ATTEMPTS:
+                await self._auth_repo.delete_otp(phone)
+                await self._auth_repo.reset_attempts(phone)
             raise OtpInvalidError()
 
         await self._auth_repo.delete_otp(phone)
+        await self._auth_repo.reset_attempts(phone)
 
     # ── JWT ────────────────────────────────────────────────────
 

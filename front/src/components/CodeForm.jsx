@@ -54,8 +54,10 @@ return (
         <p>Код отправлен на номер {phone}</p>
         <input
             type="text"
+            inputMode="numeric"
+            maxLength={6}
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             placeholder="Введите код"
             required
             className='font-montserrat bg-gray-200 p-1 rounded-[3px] focus:outline-none focus:ring-0'

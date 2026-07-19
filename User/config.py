@@ -1,7 +1,11 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    ENVIRONMENT: Literal["production", "staging", "development"] = "production"
+
     DATABASE_URL: str
     REDIS_URL: str
 
@@ -12,7 +16,8 @@ class Settings(BaseSettings):
 
     OTP_TTL_SECONDS: int = 300
     OTP_RATE_LIMIT_SECONDS: int = 60
-    OTP_CODE_LENGTH: int = 4
+    OTP_CODE_LENGTH: int = 6
+    OTP_MAX_ATTEMPTS: int = 5
     # Только для разработки: если True — OTP-код пишется в лог сервера.
     # В проде ДОЛЖНО быть False, иначе код можно достать из логов.
     OTP_DEBUG: bool = False
@@ -24,6 +29,10 @@ class Settings(BaseSettings):
     INTERNAL_TELEGRAM_SERVICE_KEY: str
     CORS_ALLOWED_ORIGINS: list[str]
     COOKIE_SECURE: bool = False
+
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT == "production"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
