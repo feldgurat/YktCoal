@@ -1,6 +1,8 @@
-export const BASE_URL = 'http://localhost:8000';
+export const BASE_URL =
+  import.meta.env.VITE_USER_API_URL ?? 'http://localhost:8000';
 
-export const ORDER_BASE_URL = 'http://localhost:8001';
+export const ORDER_BASE_URL =
+  import.meta.env.VITE_ORDER_API_URL ?? 'http://localhost:8001';
 
 export const AUTH = {
   SEND_CODE: '/api/v1/auth/sign-in-code-request',

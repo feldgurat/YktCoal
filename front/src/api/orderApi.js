@@ -1,16 +1,13 @@
 import axios from 'axios';
-import { AUTH } from './endpoints';
+import { AUTH, BASE_URL, ORDER_BASE_URL } from './endpoints';
 import {
   getAccessToken,
   setAccessToken,
   clearAccessToken,
 } from '../auth/tokenStore';
 
-const ORDER_API_BASE = 'http://localhost:8001';
-const USER_API_BASE = 'http://localhost:8000';
-
 const orderApi = axios.create({
-  baseURL: ORDER_API_BASE,
+  baseURL: ORDER_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
   withCredentials: true,
 });
@@ -57,7 +54,7 @@ orderApi.interceptors.response.use(
 
       try {
         const { data } = await axios.post(
-          `${USER_API_BASE}${AUTH.REFRESH}`,
+          `${BASE_URL}${AUTH.REFRESH}`,
           {},
           { withCredentials: true },
         );
