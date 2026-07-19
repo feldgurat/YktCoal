@@ -21,6 +21,7 @@ class AuthService:
     """
 
     _BLACKLIST_KEY = "token_bl:{jti}"  # тот же ключ, что в User-сервисе
+    _TOKEN_VER_KEY = "token_ver:{user_id}"  # тот же ключ, что в User-сервисе
 
     def __init__(self, redis_client: redis.Redis) -> None:
         self._redis = redis_client
@@ -41,6 +42,11 @@ class AuthService:
     async def is_token_revoked(self, jti: str) -> bool:
         key = self._BLACKLIST_KEY.format(jti=jti)
         return await self._redis.exists(key) > 0
+
+    async def get_token_version(self, user_id: str) -> int | None:
+        key = self._TOKEN_VER_KEY.format(user_id=user_id)
+        value = await self._redis.get(key)
+        return int(value) if value is not None else None
 
 
 def get_auth_service() -> AuthService:

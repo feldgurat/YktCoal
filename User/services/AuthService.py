@@ -155,6 +155,7 @@ class AuthService:
 
         await self.verify_otp(phone, code)
         access, refresh = self.create_token_pair(str(user.id), user.token_version, user.role_names)
+        await self._auth_repo.set_token_version(str(user.id), user.token_version)
         return user, access, refresh
 
     async def refresh_tokens(self, raw_refresh_token: str) -> tuple[str, str]:
@@ -176,6 +177,7 @@ class AuthService:
 
         await self.revoke_token(jti, payload["exp"])
         user.token_version += 1
+        await self._auth_repo.set_token_version(str(user.id), user.token_version)
 
         return self.create_token_pair(str(user.id), user.token_version, user.role_names)
 

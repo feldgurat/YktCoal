@@ -62,6 +62,16 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         ) from None
 
+    token_version = payload.get("ver")
+    if token_version is not None:
+        current_version = await auth_service.get_token_version(str(user_id))
+        if current_version is not None and token_version != current_version:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Токен устарел",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
     roles = payload.get("roles") or []
     return AuthenticatedUser(id=user_id, roles=roles)
 
