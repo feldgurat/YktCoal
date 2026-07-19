@@ -1,6 +1,7 @@
 import uuid
 from collections.abc import Sequence
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Annotated
 
 from fastapi import Depends
@@ -91,15 +92,17 @@ class OrderService:
     # ── Create / Update ────────────────────────────────────────
 
     async def create(self, user_id: uuid.UUID, data: OrderCreate) -> Order:
-        if await self._resources.get_by_id(data.resource_id) is None:
+        resource = await self._resources.get_by_id(data.resource_id)
+        if resource is None:
             raise ResourceNotFoundError()
 
+        cost = (data.volume * resource.price).quantize(Decimal("0.01"))
         o = Order(
             user_id=user_id,
             resource_id=data.resource_id,
             dest_address=data.dest_address,
             volume=data.volume,
-            cost=data.cost,
+            cost=cost,
             requested_delivery_date=data.requested_delivery_date,
             comment=data.comment,
             latitude=data.latitude,
@@ -115,13 +118,17 @@ class OrderService:
         if o.status != OrderStatus.NEW:
             raise OrderWrongStatusError("Редактировать можно только новые заказы")
 
-        if data.resource_id is not None:
-            if await self._resources.get_by_id(data.resource_id) is None:
-                raise ResourceNotFoundError()
+        resource_id = data.resource_id or o.resource_id
+        resource = await self._resources.get_by_id(resource_id)
+        if resource is None:
+            raise ResourceNotFoundError()
 
         updated = await self._orders.update(order_id, data)
         if updated is None:
             raise OrderNotFoundError()
+
+        updated.cost = (updated.volume * resource.price).quantize(Decimal("0.01"))
+        await self._orders.flush()
         return updated
 
     # ── Status transitions ─────────────────────────────────────

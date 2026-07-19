@@ -5,6 +5,7 @@ import CreateOrderForm from '../components/CreateOrderForm';
 import OrderCard from '../components/OrderCard';
 import {
   fetchMyOrders,
+  fetchResources,
   selectMyOrders,
   selectOrdersStatus,
 } from '../store/orderSlice';
@@ -17,6 +18,7 @@ export const Orders = () => {
 
   useEffect(() => {
     dispatch(fetchMyOrders());
+    dispatch(fetchResources());
   }, [dispatch]);
 
   const handleOrderCreated = () => {

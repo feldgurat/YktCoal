@@ -14,6 +14,7 @@ from app.presentation import formatters as fmt
 from app.presentation.callbacks import (
     MenuCB,
     OfferAcceptCB,
+    OfferRejectCB,
     OrderActionCB,
     ResourcePickCB,
 )
@@ -87,8 +88,8 @@ async def pick_resource(
     )
     await state.set_state(CreateOrder.entering_volume)
     await callback.message.answer(
-        f"Выбрано: <b>{chosen.name}</b> ({chosen.price} ₽/т).\n"
-        "Введите объём в тоннах (например, 5 или 12.5):"
+        f"Выбрано: <b>{chosen.name}</b> ({chosen.price} ₽/{chosen.unit}).\n"
+        f"Введите объём в {chosen.unit} (например, 5 или 12.5):"
     )
     await callback.answer()
 
@@ -136,14 +137,11 @@ async def enter_comment(
 
     data = await state.get_data()
     volume = Decimal(data["volume"])
-    price = Decimal(data["resource_price"])
-    cost = (volume * price).quantize(Decimal("0.01"))
 
     command = NewOrder(
         resource_id=data["resource_id"],
         dest_address=data["dest_address"],
         volume=volume,
-        cost=cost,
         requested_delivery_date=datetime.fromisoformat(data["requested_delivery_date"]),
         comment=comment,
     )
@@ -180,6 +178,25 @@ async def my_orders(
     await callback.answer()
 
 
+async def _send_active_offers(
+    message: Message, user: User, order_id: str, customer_service: CustomerService
+) -> None:
+    offers = await customer_service.offers_for_order(user.id, order_id)
+    active = [o for o in offers if o.status.value == "pending"]
+    if not active:
+        await message.answer(
+            "По этому заказу пока нет активных предложений.",
+            reply_markup=back_to_menu_kb(),
+        )
+        return
+
+    text = "\n\n".join(fmt.offer_card(o) for o in active)
+    await message.answer(
+        "📨 Предложения по заказу:\n\n" + text,
+        reply_markup=offers_kb(order_id, active),
+    )
+
+
 @router.callback_query(OrderActionCB.filter(F.action == "view_offers"))
 async def view_offers(
     callback: CallbackQuery,
@@ -188,21 +205,7 @@ async def view_offers(
     customer_service: CustomerService,
 ) -> None:
     user = _require(current_user)
-    offers = await customer_service.offers_for_order(user.id, callback_data.order_id)
-    active = [o for o in offers if o.status.value == "pending"]
-    if not active:
-        await callback.message.answer(
-            "По этому заказу пока нет активных предложений.",
-            reply_markup=back_to_menu_kb(),
-        )
-        await callback.answer()
-        return
-
-    text = "\n\n".join(fmt.offer_card(o) for o in active)
-    await callback.message.answer(
-        "📨 Предложения по заказу:\n\n" + text,
-        reply_markup=offers_kb(callback_data.order_id, active),
-    )
+    await _send_active_offers(callback.message, user, callback_data.order_id, customer_service)
     await callback.answer()
 
 
@@ -222,6 +225,19 @@ async def accept_offer(
         reply_markup=order_actions_kb(order),
     )
     await callback.answer("Готово")
+
+
+@router.callback_query(OfferRejectCB.filter())
+async def reject_offer(
+    callback: CallbackQuery,
+    callback_data: OfferRejectCB,
+    current_user: User | None,
+    customer_service: CustomerService,
+) -> None:
+    user = _require(current_user)
+    await customer_service.reject_offer(user.id, callback_data.order_id, callback_data.offer_id)
+    await callback.answer("Предложение отклонено")
+    await _send_active_offers(callback.message, user, callback_data.order_id, customer_service)
 
 
 @router.callback_query(OrderActionCB.filter(F.action == "cancel"))

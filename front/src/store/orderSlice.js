@@ -2,12 +2,20 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 import orderApi from '../api/orderApi';
 import { ORDERS, RESOURCES, OFFERS } from '../api/endpoints';
+import { mapOffer, mapOrder, mapResource } from '../api/mappers';
+
+const errorDetail = (err, fallback) => {
+  const detail = err.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) return detail.map((d) => d.msg).join('; ');
+  return fallback;
+};
 
 export const fetchResources = createAsyncThunk(
   'orders/fetchResources',
   async () => {
     const { data } = await orderApi.get(RESOURCES.LIST);
-    return data;
+    return data.map(mapResource);
   },
 );
 
@@ -15,7 +23,7 @@ export const fetchMyOrders = createAsyncThunk(
   'orders/fetchMyOrders',
   async () => {
     const { data } = await orderApi.get(ORDERS.MY);
-    return data;
+    return data.map(mapOrder);
   },
 );
 
@@ -24,16 +32,9 @@ export const createOrder = createAsyncThunk(
   async (orderData, { rejectWithValue }) => {
     try {
       const { data } = await orderApi.post(ORDERS.CREATE, orderData);
-      return data;
+      return mapOrder(data);
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      return rejectWithValue(
-        typeof detail === 'string'
-          ? detail
-          : Array.isArray(detail)
-            ? detail.map((d) => d.msg).join('; ')
-            : 'Ошибка при создании заявки',
-      );
+      return rejectWithValue(errorDetail(err, 'Ошибка при создании заявки'));
     }
   },
 );
@@ -43,22 +44,18 @@ export const cancelOrder = createAsyncThunk(
   async (orderId, { rejectWithValue }) => {
     try {
       const { data } = await orderApi.post(ORDERS.CANCEL(orderId));
-      return data;
+      return mapOrder(data);
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      return rejectWithValue(
-        typeof detail === 'string' ? detail : 'Не удалось отменить заявку',
-      );
+      return rejectWithValue(errorDetail(err, 'Не удалось отменить заявку'));
     }
   },
 );
-
 
 export const fetchOrderOffers = createAsyncThunk(
   'orders/fetchOrderOffers',
   async (orderId) => {
     const { data } = await orderApi.get(OFFERS.BY_ORDER(orderId));
-    return { orderId, offers: data };
+    return { orderId, offers: data.map(mapOffer) };
   },
 );
 
@@ -66,13 +63,17 @@ export const acceptOffer = createAsyncThunk(
   'orders/acceptOffer',
   async ({ offerId, orderId }, { rejectWithValue }) => {
     try {
-      const { data } = await orderApi.post(OFFERS.ACCEPT(offerId));
-      return { offer: data, orderId };
-    } catch (err) {
-      const detail = err.response?.data?.detail;
-      return rejectWithValue(
-        typeof detail === 'string' ? detail : 'Не удалось принять предложение',
+      const { data: orderDto } = await orderApi.post(
+        OFFERS.ACCEPT(orderId, offerId),
       );
+      const { data: offersDto } = await orderApi.get(OFFERS.BY_ORDER(orderId));
+      return {
+        orderId,
+        order: mapOrder(orderDto),
+        offers: offersDto.map(mapOffer),
+      };
+    } catch (err) {
+      return rejectWithValue(errorDetail(err, 'Не удалось принять предложение'));
     }
   },
 );
@@ -81,21 +82,17 @@ export const rejectOffer = createAsyncThunk(
   'orders/rejectOffer',
   async ({ offerId, orderId }, { rejectWithValue }) => {
     try {
-      const { data } = await orderApi.post(OFFERS.REJECT(offerId));
-      return { offer: data, orderId };
+      const { data } = await orderApi.post(OFFERS.REJECT(orderId, offerId));
+      return { orderId, offer: mapOffer(data) };
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      return rejectWithValue(
-        typeof detail === 'string' ? detail : 'Не удалось отклонить предложение',
-      );
+      return rejectWithValue(errorDetail(err, 'Не удалось отклонить предложение'));
     }
   },
 );
 
-
 const initialState = {
   resources: [],
-  resourcesStatus: 'idle', 
+  resourcesStatus: 'idle',
 
   orders: [],
   ordersStatus: 'idle',
@@ -185,31 +182,23 @@ const orderSlice = createSlice({
       })
 
       .addCase(acceptOffer.fulfilled, (state, action) => {
-        const { offer, orderId } = action.payload;
-        const cached = state.offersByOrder[orderId];
-        if (cached?.offers) {
-          state.offersByOrder[orderId].offers = cached.offers.map((o) =>
-            o.id === offer.id ? offer : { ...o, status: o.status === 1 ? 3 : o.status, status_label: o.status === 1 ? 'Отклонён' : o.status_label },
-          );
-        }
+        const { orderId, order, offers } = action.payload;
+        state.offersByOrder[orderId] = {
+          status: 'succeeded',
+          offers,
+          error: null,
+        };
         const idx = state.orders.findIndex((o) => o.id === orderId);
         if (idx !== -1) {
-          state.orders[idx] = {
-            ...state.orders[idx],
-            status: 2,
-            status_label: 'Принят',
-            cost: offer.price,
-            driver_id: offer.driver_id,
-            delivery_date: offer.delivery_date || state.orders[idx].delivery_date,
-          };
+          state.orders[idx] = order;
         }
       })
 
       .addCase(rejectOffer.fulfilled, (state, action) => {
-        const { offer, orderId } = action.payload;
+        const { orderId, offer } = action.payload;
         const cached = state.offersByOrder[orderId];
         if (cached?.offers) {
-          state.offersByOrder[orderId].offers = cached.offers.map((o) =>
+          cached.offers = cached.offers.map((o) =>
             o.id === offer.id ? offer : o,
           );
         }
@@ -226,6 +215,10 @@ export const selectOrdersStatus = (state) => state.orders.ordersStatus;
 export const selectCreateStatus = (state) => state.orders.createStatus;
 export const selectCreateError = (state) => state.orders.createError;
 export const selectOffersByOrder = (orderId) => (state) =>
-  state.orders.offersByOrder[orderId] || { status: 'idle', offers: [], error: null };
+  state.orders.offersByOrder[orderId] || {
+    status: 'idle',
+    offers: [],
+    error: null,
+  };
 
 export default orderSlice.reducer;

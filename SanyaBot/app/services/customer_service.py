@@ -42,6 +42,9 @@ class CustomerService:
     async def accept_offer(self, user_id: str, order_id: str, offer_id: str) -> Order:
         return await self._orders.accept_offer(user_id, order_id, offer_id)
 
+    async def reject_offer(self, user_id: str, order_id: str, offer_id: str) -> Offer:
+        return await self._offers.reject(user_id, order_id, offer_id)
+
     async def complete_order(self, user_id: str, order_id: str) -> Order:
         return await self._orders.complete(user_id, order_id)
 

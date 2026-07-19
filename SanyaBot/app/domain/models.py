@@ -57,6 +57,7 @@ class Resource:
     id: str
     name: str
     price: Decimal
+    unit: str
     is_active: bool
 
 

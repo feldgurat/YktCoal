@@ -11,7 +11,6 @@ class OrderCreate(SQLModel):
     resource_id: uuid.UUID
     dest_address: str = Field(min_length=1, max_length=512)
     volume: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
-    cost: Decimal = Field(ge=0, max_digits=12, decimal_places=2)
     requested_delivery_date: datetime
     comment: str | None = Field(default=None, max_length=1024)
     latitude: Decimal | None = Field(default=None, max_digits=9, decimal_places=6)
@@ -22,7 +21,6 @@ class OrderUpdate(SQLModel):
     resource_id: uuid.UUID | None = None
     dest_address: str | None = Field(default=None, min_length=1, max_length=512)
     volume: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
-    cost: Decimal | None = Field(default=None, ge=0, max_digits=12, decimal_places=2)
     requested_delivery_date: datetime | None = None
     comment: str | None = Field(default=None, max_length=1024)
     latitude: Decimal | None = Field(default=None, max_digits=9, decimal_places=6)

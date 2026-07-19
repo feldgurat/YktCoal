@@ -78,4 +78,4 @@ def offer_card(offer: Offer) -> str:
 
 
 def resource_line(resource: Resource) -> str:
-    return f"{resource.name} — {resource.price} ₽/т"
+    return f"{resource.name} — {resource.price} ₽/{resource.unit}"

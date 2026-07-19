@@ -11,6 +11,7 @@ from app.domain.models import Offer, Order, OrderStatus, Resource
 from app.presentation.callbacks import (
     MenuCB,
     OfferAcceptCB,
+    OfferRejectCB,
     OrderActionCB,
     ResourcePickCB,
 )
@@ -20,7 +21,7 @@ def resources_kb(resources: Sequence[Resource]) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for r in resources:
         builder.button(
-            text=f"{r.name} ({r.price} ₽/т)",
+            text=f"{r.name} ({r.price} ₽/{r.unit})",
             callback_data=ResourcePickCB(resource_id=r.id),
         )
     builder.button(text="⬅️ Отмена", callback_data=MenuCB(section="main"))
@@ -62,6 +63,10 @@ def offers_kb(order_id: str, offers: Sequence[Offer]) -> InlineKeyboardMarkup:
             text=f"✅ Принять {o.price} ₽ (#{o.id[:6]})",
             callback_data=OfferAcceptCB(order_id=order_id, offer_id=o.id),
         )
+        builder.button(
+            text=f"🚫 Отклонить (#{o.id[:6]})",
+            callback_data=OfferRejectCB(order_id=order_id, offer_id=o.id),
+        )
     builder.button(text="⬅️ В меню", callback_data=MenuCB(section="main"))
-    builder.adjust(1)
+    builder.adjust(2)
     return builder.as_markup()

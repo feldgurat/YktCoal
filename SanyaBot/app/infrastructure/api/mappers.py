@@ -49,6 +49,7 @@ def to_resource(data: dict[str, Any]) -> Resource:
         id=str(data["id"]),
         name=data["name"],
         price=_dec(data["price"]),
+        unit=data.get("unit", "т"),
         is_active=bool(data.get("is_active", True)),
     )
 
@@ -95,7 +96,6 @@ def order_create_payload(user_id: str, command: NewOrder) -> dict[str, Any]:
         "resource_id": command.resource_id,
         "dest_address": command.dest_address,
         "volume": str(command.volume),
-        "cost": str(command.cost),
         "requested_delivery_date": command.requested_delivery_date.isoformat(),
         "comment": command.comment,
         "latitude": None if command.latitude is None else str(command.latitude),

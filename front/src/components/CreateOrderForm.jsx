@@ -103,7 +103,7 @@ function CreateOrderForm({ onCreated }) {
   const selectedResource = resources.find((r) => r.id === resourceId);
   const refPrice =
     selectedResource && volume
-      ? Math.round(parseFloat(volume) * selectedResource.price_per_unit)
+      ? Math.round(parseFloat(volume) * selectedResource.price)
       : null;
 
   // ── Отправка ───────────────────────────────────────────────
@@ -114,14 +114,12 @@ function CreateOrderForm({ onCreated }) {
       dest_address: destAddress,
       resource_id: resourceId,
       volume: parseFloat(volume),
+      requested_delivery_date: `${deliveryDate}T00:00:00`,
     };
 
     if (coords) {
-      payload.longitude = coords[0];
-      payload.latitude = coords[1];
-    }
-    if (deliveryDate) {
-      payload.delivery_date = deliveryDate;
+      payload.longitude = Number(coords[0].toFixed(6));
+      payload.latitude = Number(coords[1].toFixed(6));
     }
     if (comment.trim()) {
       payload.comment = comment.trim();
@@ -171,10 +169,10 @@ function CreateOrderForm({ onCreated }) {
                 : 'Выберите тип угля'}
             </option>
             {resources
-              .filter((r) => r.is_active)
+              .filter((r) => r.isActive)
               .map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.name} — {r.price_per_unit.toLocaleString('ru-RU')} ₽/{r.unit}
+                  {r.name} — {r.price.toLocaleString('ru-RU')} ₽/{r.unit}
                 </option>
               ))}
           </select>

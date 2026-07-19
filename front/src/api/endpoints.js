@@ -16,7 +16,7 @@ export const USERS = {
 
 export const ORDERS = {
   CREATE: '/api/v1/orders',
-  MY: '/api/v1/orders/my',
+  MY: '/api/v1/orders/me',
   GET_BY_ID: (id) => `/api/v1/orders/${id}`,
   UPDATE: (id) => `/api/v1/orders/${id}`,
   CANCEL: (id) => `/api/v1/orders/${id}/cancel`,
@@ -29,6 +29,8 @@ export const RESOURCES = {
 
 export const OFFERS = {
   BY_ORDER: (orderId) => `/api/v1/orders/${orderId}/offers`,
-  ACCEPT: (offerId) => `/api/v1/offers/${offerId}/accept`,
-  REJECT: (offerId) => `/api/v1/offers/${offerId}/reject`,
+  ACCEPT: (orderId, offerId) =>
+    `/api/v1/orders/${orderId}/offers/${offerId}/accept`,
+  REJECT: (orderId, offerId) =>
+    `/api/v1/orders/${orderId}/offers/${offerId}/reject`,
 };

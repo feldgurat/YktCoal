@@ -20,6 +20,7 @@ class ResourceService:
             id=r.id,
             name=r.name,
             price=r.price,
+            unit=r.unit,
             is_active=r.is_active,
             created_at=r.created_at,
             updated_at=r.updated_at,
@@ -40,7 +41,7 @@ class ResourceService:
     async def create(self, data: ResourceCreate) -> Resource:
         if await self._repo.get_by_name(data.name) is not None:
             raise ResourceAlreadyExistsError()
-        r = Resource(name=data.name, price=data.price)
+        r = Resource(name=data.name, price=data.price, unit=data.unit)
         return await self._repo.create(r)
 
     async def update(self, resource_id: uuid.UUID, data: ResourceUpdate) -> Resource:

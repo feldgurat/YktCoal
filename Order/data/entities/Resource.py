@@ -12,6 +12,7 @@ class Resource(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     name: str = Field(max_length=128, unique=True, index=True)
     price: Decimal = Field(max_digits=12, decimal_places=2, ge=0)
+    unit: str = Field(default="т", max_length=16)
     is_active: bool = Field(default=True)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(UTC),

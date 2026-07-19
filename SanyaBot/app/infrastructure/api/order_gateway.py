@@ -114,3 +114,11 @@ class OfferApiGateway:
             "POST", f"{_PREFIX}/offers/{offer_id}/withdraw", json={"user_id": user_id}
         )
         return mappers.to_offer(data)
+
+    async def reject(self, user_id: str, order_id: str, offer_id: str) -> Offer:
+        data = await self._client.request(
+            "POST",
+            f"{_PREFIX}/orders/{order_id}/offers/{offer_id}/reject",
+            json={"user_id": user_id},
+        )
+        return mappers.to_offer(data)

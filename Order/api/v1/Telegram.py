@@ -60,7 +60,6 @@ async def tg_create_order(data: TgOrderCreate, service: OrderServiceDep):
         resource_id=data.resource_id,
         dest_address=data.dest_address,
         volume=data.volume,
-        cost=data.cost,
         requested_delivery_date=data.requested_delivery_date,
         comment=data.comment,
         latitude=data.latitude,
@@ -172,4 +171,15 @@ class TgOfferAction(SQLModel):
 @router.post("/offers/{offer_id}/withdraw", response_model=OfferRead)
 async def tg_withdraw_offer(offer_id: uuid.UUID, data: TgOfferAction, service: OfferServiceDep):
     offer = await service.withdraw(data.user_id, offer_id)
+    return _r_offer(offer)
+
+
+@router.post("/orders/{order_id}/offers/{offer_id}/reject", response_model=OfferRead)
+async def tg_reject_offer(
+    order_id: uuid.UUID,
+    offer_id: uuid.UUID,
+    data: TgOfferAction,
+    service: OfferServiceDep,
+):
+    offer = await service.reject(data.user_id, order_id, offer_id)
     return _r_offer(offer)

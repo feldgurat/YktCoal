@@ -96,6 +96,27 @@ class OfferService:
         await self._offers.flush()
         return offer
 
+    async def reject(
+        self, requester_user_id: uuid.UUID, order_id: uuid.UUID, offer_id: uuid.UUID
+    ) -> Offer:
+        """Заказчик отклоняет одно из предложений на свой заказ. PENDING → REJECTED."""
+        order = await self._orders.get_by_id(order_id)
+        if order is None:
+            raise OrderNotFoundError()
+        if order.user_id != requester_user_id:
+            raise OfferAccessDeniedError("Отклонять предложения может только заказчик")
+
+        offer = await self._offers.get_by_id(offer_id)
+        if offer is None or offer.order_id != order_id:
+            raise OfferNotFoundError()
+        if offer.status != OfferStatus.PENDING:
+            raise OfferWrongStatusError("Отклонить можно только активное предложение")
+
+        offer.status = OfferStatus.REJECTED
+        offer.updated_at = datetime.now(UTC)
+        await self._offers.flush()
+        return offer
+
 
 def get_offer_service(
     offer_repo: OfferRepositoryDep, order_repo: OrderRepositoryDep

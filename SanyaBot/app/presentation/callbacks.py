@@ -28,6 +28,11 @@ class OfferAcceptCB(CallbackData, prefix="ofa"):
     offer_id: str
 
 
+class OfferRejectCB(CallbackData, prefix="ofr"):
+    order_id: str
+    offer_id: str
+
+
 class OfferActionCB(CallbackData, prefix="off"):
     action: str  # withdraw | make
     target_id: str  # offer_id или order_id, в зависимости от action

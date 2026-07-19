@@ -15,7 +15,6 @@ class NewOrder:
     resource_id: str
     dest_address: str
     volume: Decimal
-    cost: Decimal
     requested_delivery_date: datetime
     comment: str | None = None
     latitude: Decimal | None = None

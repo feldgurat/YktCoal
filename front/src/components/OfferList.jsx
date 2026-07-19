@@ -7,13 +7,6 @@ import {
   selectOffersByOrder,
 } from '../store/orderSlice';
 
-const OFFER_STATUS_COLORS = {
-  1: 'bg-amber-100 text-amber-800',   
-  2: 'bg-green-100 text-green-800',   
-  3: 'bg-red-100 text-red-700',       
-  4: 'bg-gray-100 text-gray-600',     
-};
-
 function OfferList({ orderId, orderStatus }) {
   const dispatch = useDispatch();
   const { status, offers, error } = useSelector(selectOffersByOrder(orderId));
@@ -59,9 +52,7 @@ function OfferList({ orderId, orderStatus }) {
   }
 
   if (error) {
-    return (
-      <p className="text-xs text-red-500 mt-2 font-montserrat">{error}</p>
-    );
+    return <p className="text-xs text-red-500 mt-2 font-montserrat">{error}</p>;
   }
 
   if (offers.length === 0) {
@@ -72,7 +63,16 @@ function OfferList({ orderId, orderStatus }) {
     );
   }
 
-  const canManage = orderStatus === 1;
+  const canManage = orderStatus === 'new';
+
+  const formatDate = (iso) =>
+    iso
+      ? new Date(iso).toLocaleDateString('ru-RU', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+        })
+      : null;
 
   return (
     <div className="mt-3 border-t border-gray-100 pt-3">
@@ -86,10 +86,9 @@ function OfferList({ orderId, orderStatus }) {
 
       <div className="flex flex-col gap-2">
         {offers.map((offer) => {
-          const statusColor =
-            OFFER_STATUS_COLORS[offer.status] || 'bg-gray-100 text-gray-800';
-          const isPending = offer.status === 1;
+          const isPending = offer.status === 'pending';
           const isProcessing = processingId === offer.id;
+          const deliveryDate = formatDate(offer.deliveryDate);
 
           return (
             <div
@@ -101,16 +100,14 @@ function OfferList({ orderId, orderStatus }) {
                   {offer.price.toLocaleString('ru-RU')} ₽
                 </span>
                 <span
-                  className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusColor}`}
+                  className={`text-xs font-semibold px-2 py-0.5 rounded-full ${offer.statusColor}`}
                 >
-                  {offer.status_label}
+                  {offer.statusLabel}
                 </span>
               </div>
 
-              {offer.delivery_date && (
-                <p className="text-xs text-gray-600">
-                  Доставка: {offer.delivery_date}
-                </p>
+              {deliveryDate && (
+                <p className="text-xs text-gray-600">Доставка: {deliveryDate}</p>
               )}
 
               {offer.comment && (

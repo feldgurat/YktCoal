@@ -1,24 +1,20 @@
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { cancelOrder } from '../store/orderSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { cancelOrder, selectResources } from '../store/orderSlice';
 import OfferList from './OfferList';
 
-const STATUS_COLORS = {
-  1: 'bg-blue-100 text-blue-800',     // Новый
-  2: 'bg-yellow-100 text-yellow-800', // Принят
-  3: 'bg-purple-100 text-purple-800', // В пути
-  4: 'bg-green-100 text-green-800',   // Выполнен
-  5: 'bg-gray-100 text-gray-600',     // Отменён
-  6: 'bg-red-100 text-red-700',       // Отклонён
-};
-
-const CANCELLABLE = [1, 2, 3];
+const CANCELLABLE = ['new', 'accepted'];
 
 function OrderCard({ order }) {
   const dispatch = useDispatch();
+  const resources = useSelector(selectResources);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState('');
   const [showOffers, setShowOffers] = useState(false);
+
+  const resource = resources.find((r) => r.id === order.resourceId);
+  const resourceName = resource?.name || '—';
+  const unit = resource?.unit || 'т';
 
   const handleCancel = async () => {
     if (!window.confirm('Вы уверены, что хотите отменить заявку?')) return;
@@ -34,8 +30,8 @@ function OrderCard({ order }) {
     }
   };
 
-  const createdDate = order.created_at
-    ? new Date(order.created_at).toLocaleDateString('ru-RU', {
+  const createdDate = order.createdAt
+    ? new Date(order.createdAt).toLocaleDateString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
@@ -44,67 +40,69 @@ function OrderCard({ order }) {
       })
     : '—';
 
-  const statusColor = STATUS_COLORS[order.status] || 'bg-gray-100 text-gray-800';
-
-  const hasCost = order.cost > 0;
+  const deliveryDate = order.requestedDeliveryDate
+    ? new Date(order.requestedDeliveryDate).toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
+    : null;
 
   return (
     <div className="bg-white shadow-[0_4px_4px_rgba(0,0,0,0.25)] rounded-lg p-5 font-montserrat">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs text-gray-400">
-          #{order.id?.slice(0, 8)}
-        </span>
+        <span className="text-xs text-gray-400">#{order.id?.slice(0, 8)}</span>
         <span
-          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${statusColor}`}
+          className={`text-xs font-semibold px-2.5 py-1 rounded-full ${order.statusColor}`}
         >
-          {order.status_label}
+          {order.statusLabel}
         </span>
       </div>
 
       <div className="flex flex-col gap-1.5 text-sm">
         <p>
-          <span className="font-semibold">Ресурс:</span>{' '}
-          {order.resource?.name || '—'}
+          <span className="font-semibold">Ресурс:</span> {resourceName}
         </p>
         <p>
-          <span className="font-semibold">Объём:</span>{' '}
-          {order.volume} {order.resource?.unit || 'т.'}
+          <span className="font-semibold">Объём:</span> {order.volume} {unit}
         </p>
 
-        {hasCost ? (
+        {order.finalPrice != null ? (
           <p>
-            <span className="font-semibold">Стоимость:</span>{' '}
+            <span className="font-semibold">Итоговая цена:</span>{' '}
             <span className="text-green-700 font-bold">
-              {order.cost.toLocaleString('ru-RU')} ₽
+              {order.finalPrice.toLocaleString('ru-RU')} ₽
             </span>
           </p>
         ) : (
-          <p className="text-gray-400 italic text-xs">
-            Стоимость определится после принятия предложения
+          <p>
+            <span className="font-semibold">Ориентировочная стоимость:</span>{' '}
+            <span className="text-gray-700">
+              {order.cost != null ? order.cost.toLocaleString('ru-RU') : '—'} ₽
+            </span>
+            <span className="text-xs text-gray-400 ml-1">
+              (итоговую цену предложат водители)
+            </span>
           </p>
         )}
 
         <p>
-          <span className="font-semibold">Адрес:</span> {order.dest_address}
+          <span className="font-semibold">Адрес:</span> {order.destAddress}
         </p>
-        {order.delivery_date && (
+        {deliveryDate && (
           <p>
-            <span className="font-semibold">Дата доставки:</span>{' '}
-            {order.delivery_date}
+            <span className="font-semibold">Дата доставки:</span> {deliveryDate}
           </p>
         )}
         {order.comment && (
           <p>
-            <span className="font-semibold">Комментарий:</span>{' '}
-            {order.comment}
+            <span className="font-semibold">Комментарий:</span> {order.comment}
           </p>
         )}
         <p className="text-xs text-gray-400 mt-1">Создано: {createdDate}</p>
       </div>
 
-      {error && (
-        <p className="text-xs text-red-600 mt-2">{error}</p>
-      )}
+      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
 
       <div className="flex items-center gap-3 mt-3">
         <button
@@ -126,9 +124,7 @@ function OrderCard({ order }) {
         )}
       </div>
 
-      {showOffers && (
-        <OfferList orderId={order.id} orderStatus={order.status} />
-      )}
+      {showOffers && <OfferList orderId={order.id} orderStatus={order.status} />}
     </div>
   );
 }

@@ -79,6 +79,17 @@ async def accept_offer(
     return _r(order)
 
 
+@router.post("/{order_id}/offers/{offer_id}/reject", response_model=OfferRead)
+async def reject_offer(
+    order_id: uuid.UUID,
+    offer_id: uuid.UUID,
+    current_user: CurrentUserDep,
+    offer_service: OfferServiceDep,
+):
+    offer = await offer_service.reject(current_user.id, order_id, offer_id)
+    return _r_offer(offer)
+
+
 @router.post("/{order_id}/complete", response_model=OrderRead)
 async def complete_order(
     order_id: uuid.UUID, current_user: CurrentUserDep, service: OrderServiceDep
