@@ -45,6 +45,12 @@ services:
       - ./User/.env
     volumes:
       - ./User:/app
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:$$APP_PORT/health', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
       redis:
         condition: service_healthy
@@ -60,6 +66,12 @@ services:
       - ./Order/.env
     volumes:
       - ./Order:/app
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:$$APP_PORT/health', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
       redis:
         condition: service_healthy
@@ -76,11 +88,17 @@ services:
     volumes:
       - ./Driver:/app
       - driver_uploads:/data/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:$$APP_PORT/health', timeout=3)\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
       redis:
         condition: service_healthy
       user-backend:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
 
   telegram-bot:
@@ -89,11 +107,11 @@ services:
       - ./SanyaBot/.env
     depends_on:
       user-backend:
-        condition: service_started
+        condition: service_healthy
       order-backend:
-        condition: service_started
+        condition: service_healthy
       driver-backend:
-        condition: service_started
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
