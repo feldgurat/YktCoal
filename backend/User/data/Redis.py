@@ -1,24 +1,9 @@
-import redis.asyncio as redis
-
 from config import settings
+from ykt_common.redis import close_redis, get_redis
+from ykt_common.redis import init_redis as _init_redis
 
-redis_client: redis.Redis | None = None
+__all__ = ["close_redis", "get_redis", "init_redis"]
 
 
 async def init_redis() -> None:
-    global redis_client
-    redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
-    await redis_client.ping()
-
-
-async def close_redis() -> None:
-    global redis_client
-    if redis_client is not None:
-        await redis_client.aclose()
-        redis_client = None
-
-
-def get_redis() -> redis.Redis:
-    if redis_client is None:
-        raise RuntimeError("Redis not initialized")
-    return redis_client
+    await _init_redis(settings.REDIS_URL)

@@ -1,43 +1,16 @@
-from collections.abc import AsyncGenerator
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import create_async_engine
-from sqlalchemy.orm import sessionmaker
-from sqlmodel import SQLModel
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from config import settings
+from ykt_common.database import Database
 
-engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=False,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-    pool_recycle=1800,
-)
+_db = Database(settings.DATABASE_URL)
 
-async_session_factory = sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-)
-
-
-async def create_tables() -> None:
-    async with engine.begin() as conn:
-        await conn.run_sync(SQLModel.metadata.create_all)
-
-
-async def get_session() -> AsyncGenerator[AsyncSession]:
-    async with async_session_factory() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-
+engine = _db.engine
+async_session_factory = _db.session_factory
+create_tables = _db.create_tables
+get_session = _db.get_session
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]

@@ -1,0 +1,20 @@
+[project]
+name = "ykt-common"
+version = "0.1.0"
+description = "Общая инфраструктура сервисов YktCoal (БД, Redis, базовый репозиторий, исключения, auth-зависимости)."
+requires-python = ">=3.14"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "sqlmodel>=0.0.22",
+    "sqlalchemy[asyncio]>=2.0,<3.0",
+    "redis>=5.0,<6.0",
+    "pyjwt>=2.9,<3.0",
+]
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["ykt_common*"]
