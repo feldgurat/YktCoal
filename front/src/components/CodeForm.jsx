@@ -55,7 +55,10 @@ return (
         <input
             type="text"
             inputMode="numeric"
+            minLength={6}
             maxLength={6}
+            pattern="\d{6}"
+            title="Код состоит из 6 цифр"
             value={code}
             onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
             placeholder="Введите код"

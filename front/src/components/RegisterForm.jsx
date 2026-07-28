@@ -6,7 +6,6 @@ import { AUTH } from '../api/endpoints'
 function RegisterForm({ onRegSuccess }) {
     const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
-    const [tg, setTg] = useState(null);
     const [address, setAddress] = useState('');
 
     const [loading, setLoading] = useState(false);
@@ -18,11 +17,11 @@ function RegisterForm({ onRegSuccess }) {
         setError('');
 
         try {
-            const response = await api.post(AUTH.REGISTER, { 
-                name, 
-                contact_number: phone, 
-                telegram_user_id: tg, 
-                address });
+            const response = await api.post(AUTH.REGISTER, {
+                name,
+                contact_number: phone,
+                telegram_user_id: null,
+                address: address.trim() || null });
 
         onRegSuccess({ 
         ...response.data,
@@ -83,8 +82,7 @@ return (
             type="text"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
-            placeholder="Введите адрес"
-            required
+            placeholder="Введите адрес (необязательно)"
             className='font-montserrat bg-gray-200 p-1 rounded-[3px] focus:outline-none focus:ring-0'
         />
         <button type="submit" disabled={loading} className='font-semibold font-montserrat bg-blue-500 text-white
