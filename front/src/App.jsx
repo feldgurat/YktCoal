@@ -9,6 +9,8 @@ import { Orders } from './pages/Orders';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import DriverCabinet from './pages/DriverCabinet';
+import BecomeDriver from './pages/BecomeDriver';
 
 import ProtectedRoute from './auth/ProtectedRoute';
 import PublicOnlyRoute from './auth/PublicOnlyRoute';
@@ -35,6 +37,8 @@ function App() {
           <Route element={<MainLayout />}>
             <Route path="/orders" element={<Orders />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/driver" element={<DriverCabinet />} />
+            <Route path="/become-driver" element={<BecomeDriver />} />
           </Route>
         </Route>
       </Routes>

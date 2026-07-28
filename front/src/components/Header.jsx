@@ -1,16 +1,10 @@
-import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
-import { logout } from '../store/authSlice';
+import { selectIsDriver } from '../store/authSlice';
 
 export const Header = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    await dispatch(logout());
-    navigate('/login', { replace: true });
-  };
+  const isDriver = useSelector(selectIsDriver);
 
   return (
     <header className="w-full bg-white shadow-[0_4px_4px_rgba(0,0,0,0.25)] fixed py-4 z-40">
@@ -28,6 +22,21 @@ export const Header = () => {
           >
             Мои заказы
           </Link>
+          {isDriver ? (
+            <Link
+              to="/driver"
+              className="font-montserrat font-semibold text-lg text-black hover:underline underline-offset-4"
+            >
+              Кабинет водителя
+            </Link>
+          ) : (
+            <Link
+              to="/become-driver"
+              className="font-montserrat font-semibold text-lg text-black hover:underline underline-offset-4"
+            >
+              Стать водителем
+            </Link>
+          )}
           <Link
             to="/profile"
             className="font-montserrat font-semibold text-lg text-black hover:underline underline-offset-4"
