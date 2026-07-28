@@ -16,6 +16,12 @@ export const OFFER_STATUS = {
   withdrawn: { label: 'Отозвано', color: 'bg-gray-100 text-gray-600' },
 };
 
+export const APPLICATION_STATUS = {
+  pending: { label: 'На рассмотрении', color: 'bg-amber-100 text-amber-800' },
+  approved: { label: 'Одобрена', color: 'bg-green-100 text-green-800' },
+  rejected: { label: 'Отклонена', color: 'bg-red-100 text-red-700' },
+};
+
 const num = (v) => (v === null || v === undefined ? null : Number(v));
 
 export function mapResource(dto) {
@@ -52,6 +58,51 @@ export function mapOrder(dto) {
     longitude: num(dto.longitude),
     createdAt: dto.created_at,
     updatedAt: dto.updated_at,
+  };
+}
+
+export function mapApplication(dto) {
+  const meta = APPLICATION_STATUS[dto.status] ?? {
+    label: dto.status,
+    color: 'bg-gray-100 text-gray-800',
+  };
+  return {
+    id: dto.id,
+    userId: dto.user_id,
+    status: dto.status,
+    statusLabel: meta.label,
+    statusColor: meta.color,
+    licenseUrl: dto.license_url,
+    passport: dto.passport,
+    vehicles: dto.vehicles_snapshot ?? [],
+    submissionDate: dto.submission_date,
+    reviewedAt: dto.reviewed_at,
+    rejectionReason: dto.rejection_reason,
+    createdAt: dto.created_at,
+  };
+}
+
+export function mapDriver(dto) {
+  return {
+    id: dto.id,
+    userId: dto.user_id,
+    applicationId: dto.application_id,
+    isActive: dto.is_active,
+    createdAt: dto.created_at,
+  };
+}
+
+export function mapVehicle(dto) {
+  return {
+    id: dto.id,
+    driverId: dto.driver_id,
+    brand: dto.brand,
+    model: dto.model,
+    regNumber: dto.reg_number,
+    registrationDocs: dto.registration_docs,
+    insurance: dto.insurance,
+    capacity: dto.capacity,
+    createdAt: dto.created_at,
   };
 }
 
