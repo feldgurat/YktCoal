@@ -83,23 +83,6 @@ function CreateOrderForm({ onCreated }) {
     return () => map.setTarget(null);
   }, []);
 
-  useEffect(() => {
-    if (createStatus === 'succeeded') {
-      setResourceId('');
-      setVolume('');
-      setDestAddress('');
-      setDeliveryDate('');
-      setComment('');
-      setCoords(null);
-      markerRef.current.setGeometry(null);
-
-      onCreated?.();
-
-      const timer = setTimeout(() => dispatch(resetCreateStatus()), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [createStatus, dispatch, onCreated]);
-
   const selectedResource = resources.find((r) => r.id === resourceId);
   const refPrice =
     selectedResource && volume
@@ -107,7 +90,7 @@ function CreateOrderForm({ onCreated }) {
       : null;
 
   // ── Отправка ───────────────────────────────────────────────
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const payload = {
@@ -125,7 +108,22 @@ function CreateOrderForm({ onCreated }) {
       payload.comment = comment.trim();
     }
 
-    dispatch(createOrder(payload));
+    try {
+      await dispatch(createOrder(payload)).unwrap();
+
+      setResourceId('');
+      setVolume('');
+      setDestAddress('');
+      setDeliveryDate('');
+      setComment('');
+      setCoords(null);
+      markerRef.current.setGeometry(null);
+
+      onCreated?.();
+      setTimeout(() => dispatch(resetCreateStatus()), 3000);
+    } catch {
+      // Текст ошибки уже лежит в сторе (createError) и показан выше формы.
+    }
   };
 
   const isSubmitting = createStatus === 'loading';
