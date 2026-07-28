@@ -49,10 +49,30 @@ export const login = createAsyncThunk('auth/login', async (accessToken) => {
   return me.data;
 });
 
+// Редактирование своего профиля. Бэк принимает частичный PATCH —
+// шлём только изменённые поля.
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (fields, { rejectWithValue }) => {
+    try {
+      const { data } = await api.patch(USERS.UPDATE_ME, fields);
+      return data;
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      if (typeof detail === 'string') return rejectWithValue(detail);
+      if (Array.isArray(detail)) {
+        return rejectWithValue(detail.map((d) => d.msg).join('; '));
+      }
+      return rejectWithValue('Не удалось сохранить профиль');
+    }
+  },
+);
+
 export const logout = createAsyncThunk('auth/logout', async () => {
   try {
     await api.post(AUTH.LOGOUT);
   } catch {
+    // Не мешаем выходу, даже если бэк недоступен — токен всё равно чистим.
   }
   clearAccessToken();
 });
@@ -106,6 +126,9 @@ const authSlice = createSlice({
       .addCase(logout.fulfilled, (state) => {
         state.status = 'guest';
         state.user = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.user = action.payload;
       });
   },
 });
@@ -115,6 +138,11 @@ export const { setGuest, setUser } = authSlice.actions;
 
 export const selectAuthStatus = (state) => state.auth.status;
 export const selectUser = (state) => state.auth.user;
+export const selectRoles = (state) => state.auth.user?.roles ?? [];
+export const selectIsDriver = (state) =>
+  (state.auth.user?.roles ?? []).includes('driver');
+export const selectIsAdmin = (state) =>
+  (state.auth.user?.roles ?? []).includes('admin');
 export const selectIsAuthenticated = (state) =>
   state.auth.status === 'authenticated';
 export const selectIsAuthLoading = (state) => state.auth.status === 'loading';
