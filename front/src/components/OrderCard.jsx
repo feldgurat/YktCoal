@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { cancelOrder, selectResources } from '../store/orderSlice';
+import { cancelOrder, completeOrder, selectResources } from '../store/orderSlice';
 import OfferList from './OfferList';
 
 const CANCELLABLE = ['new', 'accepted'];
@@ -9,6 +9,7 @@ function OrderCard({ order }) {
   const dispatch = useDispatch();
   const resources = useSelector(selectResources);
   const [cancelling, setCancelling] = useState(false);
+  const [completing, setCompleting] = useState(false);
   const [error, setError] = useState('');
   const [showOffers, setShowOffers] = useState(false);
 
@@ -27,6 +28,20 @@ function OrderCard({ order }) {
       setError(typeof err === 'string' ? err : 'Не удалось отменить');
     } finally {
       setCancelling(false);
+    }
+  };
+
+  const handleComplete = async () => {
+    if (!window.confirm('Подтвердить, что заказ доставлен?')) return;
+
+    setCompleting(true);
+    setError('');
+    try {
+      await dispatch(completeOrder(order.id)).unwrap();
+    } catch (err) {
+      setError(typeof err === 'string' ? err : 'Не удалось подтвердить');
+    } finally {
+      setCompleting(false);
     }
   };
 
@@ -111,6 +126,17 @@ function OrderCard({ order }) {
         >
           {showOffers ? 'Скрыть предложения' : 'Предложения'}
         </button>
+
+        {order.status === 'in_process' && (
+          <button
+            onClick={handleComplete}
+            disabled={completing}
+            className="text-sm font-semibold text-green-600 hover:underline
+                      disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {completing ? 'Подтверждение...' : 'Подтвердить получение'}
+          </button>
+        )}
 
         {CANCELLABLE.includes(order.status) && (
           <button

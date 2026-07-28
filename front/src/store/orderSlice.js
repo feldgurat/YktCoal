@@ -51,6 +51,20 @@ export const cancelOrder = createAsyncThunk(
   },
 );
 
+export const completeOrder = createAsyncThunk(
+  'orders/completeOrder',
+  async (orderId, { rejectWithValue }) => {
+    try {
+      const { data } = await orderApi.post(ORDERS.COMPLETE(orderId));
+      return mapOrder(data);
+    } catch (err) {
+      return rejectWithValue(
+        errorDetail(err, 'Не удалось подтвердить выполнение'),
+      );
+    }
+  },
+);
+
 export const fetchOrderOffers = createAsyncThunk(
   'orders/fetchOrderOffers',
   async (orderId) => {
@@ -150,6 +164,14 @@ const orderSlice = createSlice({
       })
 
       .addCase(cancelOrder.fulfilled, (state, action) => {
+        const updated = action.payload;
+        const idx = state.orders.findIndex((o) => o.id === updated.id);
+        if (idx !== -1) {
+          state.orders[idx] = updated;
+        }
+      })
+
+      .addCase(completeOrder.fulfilled, (state, action) => {
         const updated = action.payload;
         const idx = state.orders.findIndex((o) => o.id === updated.id);
         if (idx !== -1) {
